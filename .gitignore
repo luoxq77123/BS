@@ -1,4 +1,4 @@
+.idea
 /app/config
-/app/tmp
-/plugins
 /vendors
+/app/tmp
