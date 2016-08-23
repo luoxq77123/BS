@@ -1,0 +1,47 @@
+body{font:12px/24px "arial,Microsoft YaHei,SimSun";}
+*{border:0;margin:0;padding:0;}
+li{list-style:none;}
+a{ text-decoration:none;}
+.of{ overflow:hidden;_zoom:1;}
+.fl{ float:left;}
+.fr{ float:right;}
+
+.wrap{width:1288px; margin:0 auto;}
+.red{ color:#ef0619;}
+.mt10{ margin-top:10px;}
+.mt20{ margin-top:20px;}
+.mt30{ margin-top:30px;}
+
+.workload_st {
+    height:517px;
+    color: #666;
+}
+
+.page{overflow:hidden;_zoom:1;margin:0 10px;padding:13px 10px;}
+.page .fl{font-weight:bold;}
+.page .fr span a,.page .fr span.current,.page .fr span.b{float:left;width:27px;height:25px;margin-right: 2px;line-height:25px;color:#fff;background:url(../img/page3.jpg) left top;text-align:center;}
+.page .fr span a:hover{background-image:url(../img/page4.jpg);}
+.page .fr span a.prev,.page .fr span a.next{width:51px;background-image:url(../img/page2.jpg);}
+.page .fr span a.a{width:41px;background-image:url(../img/page1.jpg);}
+.page .fr span.current{background-image:url(../img/page4.jpg);}
+.page .fr span.b{width:51px;background-image:url(../img/page2_fade.jpg);color:#9d9d9d;}
+.page .fr span.b:hover{background-image:url(../img/page2_fade.jpg);color:#9d9d9d;}
+.page .fr .text{float:left;width:24px;height:24px;border:1px solid #ccc;text-align:center;line-height:24px;margin-right:5px;background-color:#f5f5f5;}
+
+.xiangxitable{width:98%;margin:0px auto 0;}
+.xiangxitable th{height:32px; font-weight:100; border-bottom:1px solid #d9d9d9}
+.xiangxitable td{height:53px; text-align:center;background-color:#fff;}
+.xiangxitable a{margin-right:5px;}
+
+
+#busy-indicator { display:none; }
+
+/*统计部分*/
+.gzltjsearch{margin:20px 0;overflow:hidden;_zoom:1;}
+.gzltjsearch *{float:left;margin-top:7px;}
+.gzltjsearch .text{background:url(../img/inputbg.png) no-repeat left top;width:144px;padding:0 5px;height:23px;line-height:23px;border:1px solid #c1c5c6;margin:7px 20px 0 10px;}
+.gzltjsearch .time{background:url(../img/timebg.jpg) no-repeat left top;width:130px;padding:0 5px;height:25px;line-height:25px;margin:7px 20px 0 10px;}
+.gzltjsearch .cx,.gzltjsearch .dc{background:url(../img/cx.png) no-repeat left top;width:74px;height:36px;text-indent:-9999px;cursor:pointer;margin:0 10px 0 0;}
+.gzltjsearch .dc{background-image:url(../img/dc.png);}
+
+.gzltjlist td{height:35px;}

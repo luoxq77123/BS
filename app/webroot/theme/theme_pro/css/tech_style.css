@@ -1,0 +1,48 @@
+body{font:12px/24px "arial,Microsoft YaHei,SimSun";}
+*{border:0;margin:0;padding:0;}
+li{list-style:none;}
+a{ text-decoration:none;}
+.of{ overflow:hidden;_zoom:1;}
+.fl{ float:left;}
+.fr{ float:right;}
+
+.wrap{width:1288px; margin:0 auto;}
+.red{ color:#ef0619;}
+.mt10{ margin-top:10px;}
+.mt20{ margin-top:20px;}
+.mt30{ margin-top:30px;}
+
+.page{overflow:hidden;_zoom:1;margin:0 10px;padding:13px 10px;}
+.page .fl{font-weight:bold;}
+.page .fr span a,.page .fr span.current,.page .fr span.b{float:left;width:27px;height:25px;margin-right: 2px;line-height:25px;color:#fff;background:url(../img/page3.jpg) left top;text-align:center;}
+.page .fr span a:hover{background-image:url(../img/page4.jpg);}
+.page .fr span a.prev,.page .fr span a.next{width:51px;background-image:url(../img/page2.jpg);}
+.page .fr span a.a{width:41px;background-image:url(../img/page1.jpg);}
+.page .fr span.current{background-image:url(../img/page4.jpg);}
+.page .fr span.b{width:51px;background-image:url(../img/page2_fade.jpg);color:#9d9d9d;}
+.page .fr span.b:hover{background-image:url(../img/page2_fade.jpg);color:#9d9d9d;}
+.page .fr .text{float:left;width:24px;height:24px;border:1px solid #ccc;text-align:center;line-height:24px;margin-right:5px;background-color:#f5f5f5;}
+
+.xiangxitable{width:98%;margin:10px auto 0;}
+.xiangxitable th{height:26px; font-weight:100; border-bottom:1px solid #d9d9d9}
+.xiangxitable td{height:53px; text-align:center;background-color:#fff;}
+.xiangxitable a{margin-right:5px;}
+
+.xiangxitable{width:97%;margin:0 auto;}
+.xiangxitable td{color:#004481;border-bottom:1px solid #d9d9d9}
+.xiangxitable span{display:inline-block;width:18px;height:15px;background:url(../img/xuhaobg.jpg) no-repeat left top;line-height:15px;color:#fff;font-weight:bold; }
+.xiangxitable .t *{vertical-align:middle;margin-right:5px;}
+.xiangxitable .t a{font-size:14px;text-decoration:underline;color:#004481;}
+.xiangxitable tr.odd td{background-color:#f5f5f5;}
+.xiangxitable tr.hover td{background-color:#fee3a0;}
+.page .fr a{margin-right:2px;}
+.jmy .fbpt{margin:32px 0 31px 2px;}
+.jmy ul.of{border-right:1px solid #d2d3d3;width:528px;margin:0 0 10px 3%;}
+.jmy ul.of li{float:left;width:175px;border-left:1px solid #d2d3d3;text-align:center;background:url(../img/jmylibg.jpg) repeat-x top;height:36px; line-height:36px;}
+.jmy ul.of li *{vertical-align:middle;margin-right:5px;}
+.jmy ul.of li.hover{background-image:url(../img/jmylionbg.jpg);}
+.jmy .xiangxitable td{text-align:left;text-indent:5px;}
+/*.sjjg{padding-top:10px;}*/
+.sjjg{ border:1px #d6d6d6 solid; border-width:0px 1px; padding-top:10px; background:url(../img/shrightbottom.jpg) repeat-x 0 bottom; height:795px;}
+.sh_noDate{ background:url(../img/shnodata.jpg) no-repeat center 165px; border:none}
+

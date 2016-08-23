@@ -1,0 +1,639 @@
+<?php
+App::import('Vendor', 'AuditTaskOperation', array('file' => 'webservices' . DS . 'AuditInterface'. DS . 'TaskInterface' . DS . 'audit_task_operation.php'));
+App::import('Vendor', 'AuditTaskMpcOperation', array('file' => 'webservices' . DS . 'AuditInterface'. DS . 'TaskInterface' . DS . 'audit_task_mpc_operation.php'));
+App::import('Vendor', 'AuditTaskSpecialInfo', array('file' => 'webservices' . DS . 'AuditInterface'. DS . 'TaskInterface' . DS . 'audit_task_special_info.php'));
+App::import('Vendor', 'AuditWorkFlowOperation', array('file' => 'webservices' . DS . 'AuditInterface'. DS . 'TaskInterface' . DS . 'audit_work_flow_operation.php'));
+App::import('Model', 'Content');
+App::import('Model', 'TaskAuditStep');
+App::import('Model', 'XcutPgmMaster');
+App::import('Model', 'PgmMaster');
+App::import('Vendor', 'DbHandle', array('file' => 'webservices' . DS . 'DB_Operation' . DS  . 'class.db_handle.php'));
+
+App::import('Vendor', 'NumericArray', array('file' => 'someoperation' . DS . 'class.numeric_array.php'));
+App::import('Vendor', 'ChangeEncode', array('file' => 'someoperation' . DS . 'class.change_encode.php'));
+App::import('Vendor', 'ConvertPopedom', array('file' => 'someoperation' . DS . 'class.convert_popedom.php'));
+class AuditTaskUpdateOperation extends Object{
+	public $content;
+	public $taskAuditStep;
+	public $xcutPgmMaster;
+	public $pgmMaster;
+
+	public $paramTaskInfo;
+	public $curTaskInfo;
+
+	public $mpcOperation;
+
+	public function __construct(){
+		$this->content = new Content();
+		$this->taskAuditStep = new TaskAuditStep();
+		$this->xcutPgmMaster = new XcutPgmMaster();
+		$this->pgmMaster = new PgmMaster();
+
+		//mpc操作
+		if (IS_MPC_CUSTOM==1){
+			App::import('Vendor', 'AuditTaskMpcCntvOperation', array('file' => 'webservices' . DS . 'AuditInterface'. DS . 'Interface_Oracle' . DS . 'TaskInterface' . DS . 'audit_task_mpc_operation_cntv.php'));
+			$this->mpcOperation = new AuditTaskMpcCntvOperation();
+		}
+		else {
+			$this->mpcOperation = new AuditTaskMpcOperation();
+		}
+	}
+	/**
+	 *
+	 * 任务更新
+	 * @param array $theParams
+	 */
+	public function updateTaskWithInfo($theParams){
+		$this->paramTaskInfo = $theParams['TaskInfo'];
+		$platFormUpdate = $theParams['PlatFormUpdate'];
+		$metaDataUpdate = $theParams['MetaDataUpdate'];
+
+		$theTaskID = (int)$this->paramTaskInfo['TaskID'];
+		$state = (int)$this->paramTaskInfo['ContentAuditState'];
+
+		//获取当前任务的相关属性
+		$taskOperation = new AuditTaskOperation();
+		$this->curTaskInfo = ChangeEncode::changeEncodeToUTF8($taskOperation->getTaskWithID($theTaskID));
+
+		$auditLevel = (int)$this->curTaskInfo['auditlevel'];
+		$taskType = (int)$this->curTaskInfo['tasktype'];
+
+		//进行审核级别判断
+		$userTaskLevel = $this->_getUserAuditLevel();
+		if (!in_array($auditLevel, $userTaskLevel)){
+			return false;
+		}
+
+		//格式化获取当前时间
+		$theTime = date('Y-m-d H:i:s',time());
+
+		//根据状态更新数据及流程
+		if ($state==PASS_AUDIT_TASK_STATE){
+			$metaData = $this->metaDataOperation($theTaskID, $platFormUpdate, $metaDataUpdate);
+
+			$baseState = $this->baseOperation($theTaskID, $metaData, $theTime);
+
+			//是否进行MPC调度
+			$taskIDData = $this->_getTaskIDsWithGroupID();
+			$isFinal = $this->_judgeTaskIsFinal($taskIDData);
+			$mpcState=true;
+			if ($isFinal){
+				//流程发起处理
+				$this->mpcOperation->setNewMpc($taskIDData);
+				$commitMpcState = $this->mpcOperation->commitMpc();
+
+				$reWriteMpcState = $this->mpcOperation->rewriteMpc($taskIDData);
+				$mpcState = $mpcState && $commitMpcState && $reWriteMpcState;
+			}
+			if ($mpcState){
+				//更新元数据
+				$deepState = $this->deepOperation($metaData, $theTime,$taskIDData);
+				return $baseState&&$deepState;
+			}
+			return false;
+		}
+		elseif ($state == RETURN_AUDIT_TASK_STATE){
+			$metaData = $this->metaDataOperation($theTaskID, $platFormUpdate, $metaDataUpdate);
+
+			$baseState = $this->baseOperation($theTaskID, $metaData, $theTime);
+			$deepState = $this->deepOperation($metaData, $theTime);
+			return $baseState&&$deepState;
+		}
+		else {
+			return $this->_updateCurTaskInfo($theTime);
+		}
+	}
+	private function baseOperation($theTaskID,$metaData,$theTime){
+		//更新基本审核信息
+		$updateBaseInfoState = $this->_updateCurTaskInfo($theTime);
+
+		//初始化Mpc对象
+		$workflowID = $this->curTaskInfo['workflowid'];
+		$this->mpcOperation->initData($theTaskID,$metaData,$workflowID);
+
+		return $updateBaseInfoState;
+	}
+	private function deepOperation($metaData,$theTime,$taskIDData=NULL){
+		//更新元数据
+		$updateMetaDataState = $this->_rewriteMetaData($metaData,$taskIDData);
+		//设置流程相关信息
+		$updateWorkflow = $this->_setFlowInfo($theTime);
+		//通知更新
+		$this->noticeUpdateState($theTime);
+
+		return $updateMetaDataState&&$updateWorkflow;
+	}
+	private function noticeUpdateState($theTime){
+		$state = (int)$this->paramTaskInfo['ContentAuditState'];
+		if (IS_CP_AUDIT){
+			//
+			$this->cpUpdateState($state,$theTime);
+		}
+		else {
+			if ($state ==RETURN_AUDIT_TASK_STATE){
+				//进行任务打回
+				$workStationType = $this->mpcOperation->getWorkStationType();
+				$returnState = $this->_returnPgm($workStationType);
+			}
+		}
+	}
+
+	/**
+	 *
+	 * 获取用户审核级别
+	 */
+	private function _getUserAuditLevel(){
+		$taskType = (int)$this->curTaskInfo['tasktype'];
+		$userAuditPopedomNum = (int)$this->paramTaskInfo['UserAuditPopedom'];
+		//获取用户审核级别
+		$userOverTaskLevel = ConvertPopedom::convertPopedomToArray($userAuditPopedomNum);
+		$userTaskLevel = array();
+		if (!TASK_AUDIT_TYPE){
+			foreach ($userOverTaskLevel as $value) {
+				$userTaskLevel[]=$value-1;
+			}
+		}
+		else {
+			if (TASK_AUDIT_MODE == 1 && $taskType == CONTENT_TASK_TYPE){
+				//进行级别处理
+				foreach ($userOverTaskLevel as $value) {
+					$userTaskLevel[]=$value-1+MAX_TASK_AUDIT_LEVEL;
+				}
+			}
+			elseif (TASK_AUDIT_MODE == 2 && $taskType == TECH_TASK_TYPE){
+				//进行级别处理
+				foreach ($userOverTaskLevel as $value) {
+					$userTaskLevel[]=$value-1+MAX_TASK_AUDIT_LEVEL;
+				}
+			}
+			else {
+				foreach ($userOverTaskLevel as $value) {
+					$userTaskLevel[]=$value-1;
+				}
+			}
+		}
+		return $userTaskLevel;
+	}
+	/**
+	 *
+	 * 更新任务基本信息
+	 */
+	private function _updateCurTaskInfo($theTime){
+		$paramsTaskInfo = $this->paramTaskInfo;
+		$theTaskID = $paramsTaskInfo['TaskID'];
+		$CurTasktate = $paramsTaskInfo['ContentAuditState'];
+
+		$taskInfoData = array(
+		             'taskid'=>$theTaskID,		             
+		             'contentauditnote'=>$paramsTaskInfo['ContentAuditNote']);
+		if ($CurTasktate != ONLY_SAVE_TASK){
+			$theArray = array(
+			      'auditorid'=>(int)$paramsTaskInfo['AuditorID'],
+			      'auditorname'=> $paramsTaskInfo['AuditorName'],
+                  'taskauditdate'=>$theTime);
+			$taskInfoData = array_merge($taskInfoData,$theArray);
+		}
+
+		$taskInfoData = ChangeEncode::changeEncodeFromUTF8($taskInfoData);
+		$this->content->set($taskInfoData);
+		$updateState = $this->content->save();
+		if (!$updateState){
+			$this->log('任务更新：更新任务基本信息失败');
+		}
+
+		return $updateState;
+	}
+	/**
+	 *
+	 * 获取平台代号
+	 * @param array $platForms
+	 */
+	private function _getPlatFormNumber($platForms){
+		$thePlatForms = $platForms['PlatFormInfo'];
+		if (!$thePlatForms){
+			return 0;
+		}
+
+		$platFormNumber = 0;
+		$platFormInfo = NumericArray::toNumericArray($thePlatForms);
+		foreach ($platFormInfo as $tempPlat) {
+			$selectState = (int)$tempPlat['IsSelected'];
+			if($selectState == IS_SELECTED){
+				$platFormID = (int)$tempPlat['PlatFormID'];
+				$platFormNumber += $platFormID;
+			}
+		}
+		return $platFormNumber;
+	}
+	/**
+	 *
+	 * 设置流程信息
+	 */
+	private function _setFlowInfo($theTime){
+		$theWorkFlowState = true;
+		if(IS_UPDATE_WORK_FLOW){
+			//获取workflow相关
+			$workFlowID = $this->mpcOperation->getWorkFlowID();
+			$newWorkFlowType = $this->mpcOperation->getNewWorkFlowType();
+			//更新流程监看
+			$theWorkFlowState = $this->_updateWorkFlow($workFlowID,$newWorkFlowType);
+		}
+
+		//更新任务进度表
+		$theAuditStep = $this->_updateTaskAuditStep($theTime);
+		if (!$theAuditStep){
+			$this->log('任务进度更新：更新任务进度失败');
+		}
+
+		//更新任务状态和级别及释放锁定
+		$theAuditLevel = $this->_updateTaskStateAndLevel();
+		if (!$theAuditLevel){
+			$this->log('任务级别更新：更新任务级别失败');
+		}
+
+		return $theAuditStep&&$theAuditLevel;
+	}
+	private function _updateWorkFlow($workFlowID,$newWorkFlowType){
+		$state = (int)$this->paramTaskInfo['ContentAuditState'];
+
+		$taskType = (int)$this->curTaskInfo['tasktype'];
+		$auditLevel = (int)$this->curTaskInfo['auditlevel'];
+		$userName = $this->paramTaskInfo['AuditorName'];
+		$theTaskID = (int)$this->paramTaskInfo['TaskID'];
+			
+		//调用接口
+		if ($state == RETURN_AUDIT_TASK_STATE){
+			$workFlowOperation = new AuditWorkFlowOperation($workFlowID, 'back', $taskType, $auditLevel, $userName);
+		}
+		else {
+			$workFlowOperation = new AuditWorkFlowOperation($workFlowID, 'pass', $taskType, $auditLevel, $userName,$theTaskID,$newWorkFlowType);
+		}
+		return  $workFlowOperation->setWorkFlow();
+	}
+
+	/**
+	 *
+	 * 更新审核步骤
+	 * @param mix $theTime
+	 */
+	private function _updateTaskAuditStep($theTime){
+		$theTaskID = (int)$this->paramTaskInfo['TaskID'];
+
+		$auditLevel = (int)$this->curTaskInfo['auditlevel'];
+		$theLevel = $auditLevel + 1;
+
+		$stepData = array(
+		       'taskid'     => $theTaskID,
+		       'auditlevel' => $theLevel,
+		       'groupid'    => (int)$this->curTaskInfo['groupid'],
+		       'tasktype'   => (int)$this->curTaskInfo['tasktype'],
+		       'auditorid'  => (int)$this->paramTaskInfo['AuditorID'],
+		       'auditorname'=> $this->paramTaskInfo['AuditorName'],
+		       'taskauditdate'    => $theTime,
+		       'contentauditstate'=> (int)$this->paramTaskInfo['ContentAuditState'],
+		       'contentauditnote' => $this->paramTaskInfo['ContentAuditNote']
+		);
+		$this->taskAuditStep->newSet($stepData);
+		return  $this->taskAuditStep->newSave();
+	}
+	/**
+	 *
+	 * 更新任务状态及级别以及解除锁定
+	 */
+	private function _updateTaskStateAndLevel(){
+		$theTaskID = (int)$this->paramTaskInfo['TaskID'];
+		$CurTasktate = (int)$this->paramTaskInfo['ContentAuditState'];
+
+		$groupID = (int)$this->curTaskInfo['groupid'];
+		$taskType = (int)$this->curTaskInfo['tasktype'];
+		$auditLevel = (int)$this->curTaskInfo['auditlevel'];
+		$theLevel = $auditLevel + 1;
+
+		$levelData = array('taskid'=>$theTaskID,
+			               'contentauditstate'=>$CurTasktate,
+		                   'lockerid'=>0,
+		                   'lockstate'=>NOT_LOCK_STATE,
+			               'auditlevel'=>$theLevel);
+		$this->content->set($levelData);
+		$theAuditLevel = $this->content->save();
+
+		if ($CurTasktate==RETURN_AUDIT_TASK_STATE){
+			return $theAuditLevel;
+		}
+
+		if (!TASK_AUDIT_TYPE){
+
+		}
+		else {
+			$levelCondition = array();
+			if (TASK_AUDIT_MODE == 1 && $taskType == TECH_TASK_TYPE){
+				//先技审后内审情况下，若技审全部结束，更新内审对应数据
+				if ($theLevel == TASK_TECH_AUDIT_LEVEL){
+					$levelCondition = array('groupid'=>$groupID,'tasktype'=>CONTENT_TASK_TYPE);
+				}
+			}
+			elseif(TASK_AUDIT_MODE == 2 && $taskType == CONTENT_TASK_TYPE){
+				//先内审后技审情况下，若内审全部结束，更新技审对应数据
+				if ($theLevel == TASK_CONTENT_AUDIT_LEVEL){
+					$levelCondition = array('groupid'=>$groupID,'tasktype'=>TECH_TASK_TYPE);
+				}
+			}
+			if ($levelCondition){
+				$theTaskIDData = $this->content->find('all',array('fields'=>array('taskid','auditlevel'),'conditions'=>$levelCondition));
+				foreach ($theTaskIDData as $tmpTaskIDData) {
+					$tmpID = (int)$tmpTaskIDData['Content']['taskid'];
+					$tmpLevel = (int)$tmpTaskIDData['Content']['auditlevel'];
+					$this->content->set(array('taskid'=>$tmpID,'auditlevel'=>$tmpLevel+MAX_TASK_AUDIT_LEVEL));
+					$thestate = $this->content->save();
+					$theAuditLevel = $theAuditLevel&&$thestate;
+				}
+			}
+		}
+		return $theAuditLevel;
+	}
+	/**
+	 *
+	 * 两种打回方式
+	 * @param string $workStationType
+	 */
+	private function _returnPgm($workStationType){
+		if (strtoupper($workStationType)==strtoupper(EDIT_MODE_XCUT)){
+			//xcut打回
+			return $this->_updateXcutPgmState();
+		}
+		else {
+			//精编打回
+			return $this->_updateNovaPgmState();
+		}
+	}
+	private function _updateXcutPgmState(){
+		$pgmGuid = $this->curTaskInfo['pgmguid'];
+
+		$xcutData = array('pgmguid'=>$pgmGuid,'state'=>PGM_RETRUN_STATE);
+		$this->xcutPgmMaster->set($xcutData);
+		$xcutState = $this->xcutPgmMaster->save();
+		if (!$xcutState){
+			$this->log('打回处理：Xcut打回失败');
+		}
+		return $xcutState;
+	}
+	private function _updateNovaPgmState(){
+		$pgmGuid = $this->curTaskInfo['pgmguid'];
+
+		$novaData = array('pgmguid'=>$pgmGuid,'status'=>PGM_RETRUN_STATE);
+		$this->pgmMaster->set($novaData);
+		$novaState = $this->pgmMaster->save();
+
+		if (!$novaState){
+			$this->log('打回处理：精编打回失败');
+		}
+		return $novaState;
+	}
+	/**
+	 *
+	 * 获取同一组下的所有用户ID
+	 */
+	private function _getTaskIDsWithGroupID(){
+		$groupID = (int)$this->curTaskInfo['groupid'];
+
+		$field = array('taskid','groupid','tasktype','auditorname','taskauditdate','contentauditstate','auditlevel');
+		$condition = array('groupid'=> $groupID,'historictaskstate' => DEFAULT_HISTORIC_TASK_STATE);
+
+		$taskIDData = $this->content->find('all',array('fields'=>$field,'conditions'=>$condition));
+		return ChangeEncode::changeEncodeToUTF8($taskIDData);
+	}
+	private function _judgeTaskIsFinal($taskIDData){
+		$auditLevel = (int)$this->curTaskInfo['auditlevel'];
+		$taskType = (int)$this->curTaskInfo['tasktype'];
+		$willLevel = $auditLevel + 1;
+
+		$judgeState = false;
+		$taskIDCount = count($taskIDData);
+		if ($taskIDCount==2){
+			if ($taskType == CONTENT_TASK_TYPE && TASK_AUDIT_MODE == 1){
+				$taskLevel = TASK_CONTENT_AUDIT_LEVEL+ MAX_TASK_AUDIT_LEVEL;
+				if ($taskLevel==$willLevel){
+					$judgeState = true;
+				}
+			}
+			elseif ($taskType == TECH_TASK_TYPE && TASK_AUDIT_MODE == 2) {
+				$taskLevel = TASK_TECH_AUDIT_LEVEL+ MAX_TASK_AUDIT_LEVEL;
+				if ($taskLevel==$willLevel){
+					$judgeState = true;
+				}
+			}
+		}
+		else {
+			if (!TASK_AUDIT_TYPE){
+				$taskLevel = TASK_AUDIT_AUDIT_LEVEL;
+			}
+			else {
+				if ($taskType == CONTENT_TASK_TYPE){
+					$taskLevel = TASK_CONTENT_AUDIT_LEVEL;
+				}
+				elseif ($taskType == TECH_TASK_TYPE) {
+					$taskLevel = TASK_TECH_AUDIT_LEVEL;
+
+				}
+			}
+			if ($taskLevel==$willLevel){
+				$judgeState = true;
+			}
+		}
+		return $judgeState;
+
+	}
+	/**
+	 *
+	 * 判断节目审核是否完成
+	 */
+	private function _judgeTaskIsAllPass($taskIDData){
+		$taskIDCount = count($taskIDData);
+
+		//获取当前节目内审以及技审情况
+		$willNextAction = 0;
+		foreach ($taskIDData as $tempdata) {
+			$temptype = (int)$tempdata['Content']['tasktype'];
+			$tempstate = (int)$tempdata['Content']['contentauditstate'];
+			$templevel = (int)$tempdata['Content']['auditlevel'];
+
+			if (!TASK_AUDIT_TYPE){
+				$taskLevel = TASK_AUDIT_AUDIT_LEVEL;
+			}
+			else {
+				if ($temptype == CONTENT_TASK_TYPE){
+					$taskLevel = TASK_CONTENT_AUDIT_LEVEL;
+					if (TASK_AUDIT_MODE == 1){
+						$taskLevel = $taskLevel + MAX_TASK_AUDIT_LEVEL;
+					}
+				}
+				else {
+					$taskLevel = TASK_TECH_AUDIT_LEVEL;
+					if (TASK_AUDIT_MODE == 2){
+						$taskLevel = $taskLevel + MAX_TASK_AUDIT_LEVEL;
+					}
+				}
+			}
+
+			if ($tempstate == PASS_AUDIT_TASK_STATE && $templevel==$taskLevel){
+				$willNextAction++;
+			}
+		}
+		if ($willNextAction == $taskIDCount){
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 *
+	 * 回写元数据
+	 * @param array $metaData
+	 * @param array $taskIDData
+	 */
+	private function _rewriteMetaData($metaData,$taskIDData){
+		if (!$taskIDData){
+			$taskIDData = $this->_getTaskIDsWithGroupID();
+		}
+
+		extract($metaData);
+		$theData = array('PlatFormInfos'=>array('PlatFormInfo'=>$platFormArray),
+		                 'Attributes'=>array('AttributeItem'=>array_values($newKeyAttributeArray)));
+
+		$metaDataXml = new Xml(array('MeteData'=>$theData),array('format' => 'tags'));
+		$metaDataXml->options(array('cdata'=>false));
+		$metaDataXmlStr = $metaDataXml->toString();
+
+		//根据不同的ID更新元数据
+		$metaDataUpdState = true;
+		foreach ($taskIDData as $tempdata) {
+			$tempID = (int)$tempdata['Content']['taskid'];
+			//更新对应元数据
+			$blobStyle = DbHandle::_getDbSetBlobStyle();
+			$sqlStr = "update et_nmpgmauditlist t set metedata=".$blobStyle." where t.taskid=".$tempID;
+			$reMeteData = $this->content->newSetBlob($sqlStr,$metaDataXmlStr);
+
+			//元数据更新的状态
+			$metaDataUpdState = $metaDataUpdState&&$reMeteData;
+		}
+		if (!$metaDataUpdState){
+			$this->log('元数据更新：更新元数据失败');
+		}
+		return $metaDataUpdState;
+	}
+
+	/**
+	 *
+	 * 元数据更新后获取
+	 * @param unknown_type $taskID 任务ID
+	 * @param unknown_type $platFormUpdate  修改的平台信息
+	 * @param unknown_type $metaDataUpdate  修改的元数据项
+	 */
+	private function metaDataOperation($taskID,$platFormUpdate,$metaDataUpdate){
+		//获取元数据
+		$metaParamArray = array('TaskID'=>$taskID,'CurrentPage'=>1,'PageSize'=>DEFAULT_IS_ALL_METAINFO);
+		$metaOperation = new AuditTaskSpecialInfo();
+		$array = $metaOperation->getMetaDataListWithID($metaParamArray);
+
+		$prePlatFormArray = $array['PlatFormInfo'];
+		$preAttributeArray = $array['AttributeItem'];
+
+		//平台信息更新
+		$platFormArray = array();
+		if ($platFormUpdate){
+			if ($prePlatFormArray){
+				$platFormUpdate = NumericArray::toNumericArray($platFormUpdate);
+				$prePlatFormArray = NumericArray::toNumericArray($prePlatFormArray);
+				foreach ($prePlatFormArray as $tempPlatForm){
+					$currentID = (int)$tempPlatForm['PlatFormID'];
+
+					$tempPlatForm['IsSelected']=0;
+					if (in_array($currentID, $platFormUpdate)){
+						$tempPlatForm['IsSelected']=1;
+					}
+					$platFormArray[] = $tempPlatForm;
+				}
+			}
+		}
+		else {
+			$platFormArray = $prePlatFormArray;
+		}
+
+		$keyAttributeArray = array();
+		//更新修改元数据
+		if ($metaDataUpdate){
+			$metaUpdateCode = array_keys($metaDataUpdate);
+		}
+		if ($preAttributeArray){
+			$preAttributeArray = NumericArray::toNumericArray($preAttributeArray);
+			foreach ($preAttributeArray as $tmpAttribute) {
+				$currentCode = $tmpAttribute['ItemCode'];
+
+				if ($metaDataUpdate){
+					//更新页面修改值
+					if (in_array($currentCode, $metaUpdateCode)){
+						$tmpAttribute['Value']=$metaDataUpdate[$currentCode];
+					}
+				}
+				$keyAttributeArray[$currentCode] = $tmpAttribute;
+			}
+		}
+
+		$newKeyAttributeArray = $this->updateLogOperation($metaDataUpdate, $keyAttributeArray);
+
+		return compact('platFormArray','newKeyAttributeArray');
+	}
+	private function updateLogOperation($metaDataUpdate,$keyAttributeArray){
+		$userName = $this->paramTaskInfo['AuditorName'];
+
+		$attributeCode = array_keys($keyAttributeArray);
+		if ($metaDataUpdate){
+			foreach ($metaDataUpdate as $tmpUpdateCode=>$tmpUpdateValue) {
+				$tmpLogCode = $tmpUpdateCode.'_Modify';
+				if (in_array($tmpLogCode, $attributeCode)){
+					//更新
+					$tmpCodeItem = $keyAttributeArray[$tmpLogCode];
+					$tmpCodeItem['Value'] = 'Modify TO['.$tmpUpdateValue.'];Edit by ['.$userName.']';
+					$keyAttributeArray[$tmpLogCode] = $tmpCodeItem;
+				}
+				else{
+					//添加
+					$tmpDataCodeItem = $keyAttributeArray[$tmpUpdateCode];
+
+					$tmplogName = $tmpDataCodeItem['ItemName'].'_Modify';
+					$tmpLogValue = 'Modify TO['.$tmpDataCodeItem['Value'].'];Edit by ['.$userName.']';
+
+					$tmpNewCodeItem = array('ItemCode'=>$tmpLogCode,'ItemName'=>$tmplogName,'Value'=>$tmpLogValue);
+					$keyAttributeArray[$tmpLogCode] = $tmpNewCodeItem;
+				}
+			}
+		}
+		return $keyAttributeArray;
+	}
+
+
+	/**
+	 * Cp涉及的处理方法
+	 */
+	private function cpUpdateState($state,$theTime){
+		$pgmGUID = $this->curTaskInfo['pgmguid'];
+		$auditNote = $this->paramTaskInfo['ContentAuditNote'];
+
+		$data = array('pgmguid'=>$pgmGUID,'auditstate'=>$state,'auditnote'=>$auditNote,'audittime'=>$theTime);//
+		$postData = json_encode(array($data));
+		$this->log($postData);
+
+		$url = HTTP_POST_CP.'/api/receive';
+		$this->log($url);
+
+		$httpCh = curl_init();
+		curl_setopt($httpCh, CURLOPT_URL, $url);
+		curl_setopt($httpCh, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($httpCh, CURLOPT_POST, 1);
+		curl_setopt($httpCh, CURLOPT_POSTFIELDS, $data);
+
+		$reData = curl_exec($httpCh);
+		curl_close($httpCh);
+		$this->log($reData);
+	}
+}

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WSDL:definitions xmlns:MIME="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:SOAP="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tns="http://localhost/mpcinterface.wsdl" xmlns:DIME="http://schemas.xmlsoap.org/ws/2002/04/dime/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:mpc" xmlns="http://schemas.xmlsoap.org/wsdl/" name="mpcinterface" targetNamespace="http://localhost/mpcinterface.wsdl" xmlns:WSDL="http://schemas.xmlsoap.org/wsdl/">
+  <WSDL:types>
+    <xsd:schema xmlns="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="urn:mpc">    
+    </xsd:schema>
+  </WSDL:types>
+  <WSDL:message name="mpccommitRequest">
+    <WSDL:part name="strInput" type="xsd:string" />
+    <WSDL:part name="strReserve" type="xsd:string" />
+  </WSDL:message>
+  <WSDL:message name="mpccommitResponse">
+    <WSDL:part name="strOutput" type="xsd:string" />
+  </WSDL:message>
+  <WSDL:portType name="mpc">
+    <WSDL:operation name="mpccommit">
+      <documentation>Service definition of function ns__mpccommit</documentation>
+      <WSDL:input message="tns:mpccommitRequest" />
+      <WSDL:output message="tns:mpccommitResponse" />
+    </WSDL:operation>
+  </WSDL:portType>
+  <WSDL:binding name="mpcinterface" type="tns:mpc">
+    <SOAP:binding transport="http://schemas.xmlsoap.org/soap/http" style="rpc" />
+    <WSDL:operation name="mpccommit">
+      <SOAP:operation soapAction="" style="rpc" />
+      <WSDL:input>
+        <SOAP:body use="encoded" namespace="urn:mpc" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </WSDL:input>
+      <WSDL:output>
+        <SOAP:body use="encoded" namespace="urn:mpc" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" />
+      </WSDL:output>
+    </WSDL:operation>
+  </WSDL:binding>
+  <WSDL:service name="mpcinterface">
+    <documentation>gSOAP 2.8.0 generated service definition</documentation>
+    <WSDL:port name="mpcinterface" binding="tns:mpcinterface">
+      <SOAP:address location="http://192.168.10.249:8088" />
+    </WSDL:port>
+  </WSDL:service>
+</WSDL:definitions>
