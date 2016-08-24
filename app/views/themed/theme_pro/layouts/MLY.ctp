@@ -145,7 +145,7 @@
 					  ?>
     				    <span class="sArral" title="高级搜索"></span>
     				</form> 
-    <?php if (!isset($relationship)) { ?>                    
+                    <?php if (!isset($relationship)) { ?>
 					<div class="sDrop" style="display:none">  
 					    <form action="" id="Finding" name="Finding" method="post" onsubmit="return false;" accept-charset="utf-8">                         
 						<ul>

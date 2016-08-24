@@ -258,7 +258,7 @@ function setArtDialog(message){
                 	<div class="z-searchBox <?php echo $action; ?>_search">
                       <?php if(isset($action) && $action == 'show_log'):?>
                 	    <form action="/operatelog" id="NameFinding" accept-charset="utf-8">
-							         <input type="text" class="sTxt" name="programname" placeholder="请输入节目名称" value="<?php echo isset($programname)?$programname:""; ?>">
+							<input type="text" class="sTxt" name="programname" placeholder="请输入节目名称" value="<?php echo isset($programname)?$programname:""; ?>">
                     	    <input type="submit" class="sBtn" value="" />
                     	    <span class="sArral" title="高级搜索"></span>
                     	</form>                   	                	
@@ -268,39 +268,39 @@ function setArtDialog(message){
                         		<li>
                                 	<div class="t"><span>完成时间：</span></div>
                                     <div class="c">
-                  										<input name="start_date" onFocus="WdatePicker({startDate:'%y-%M-%d 00:00:00',dateFmt:'yyyy-MM-dd HH:mm:ss',alwaysUseStartDate:true})" class="WdateFind" value="<?php echo $start_date; ?>" id="StartTime" type="text">
-                  										<span>到</span>
+                  					    <input name="start_date" onFocus="WdatePicker({startDate:'%y-%M-%d 00:00:00',dateFmt:'yyyy-MM-dd HH:mm:ss',alwaysUseStartDate:true})" class="WdateFind" value="<?php echo $start_date; ?>" id="StartTime" type="text">
+                  						<span>到</span>
                                     	<input name="end_date" onFocus="WdatePicker({startDate:'%y-%M-%d 23:59:59',dateFmt:'yyyy-MM-dd HH:mm:ss',alwaysUseStartDate:true})" class="WdateFind" value="<?php echo $end_date; ?>" id="EndTime" type="text"> 
                                     </div>
                                 </li>
                         		<li>
                                 	<div class="t"><span>节目标题：</span></div>
                                     <div class="c">
-										                  <input type="text" class="longIpt" name="programname" value="<?php echo isset($programname)?$programname:""; ?>">
+									    <input type="text" class="longIpt" name="programname" value="<?php echo isset($programname)?$programname:""; ?>">
                                     </div>
                                 </li>
                                 <li>
                                 	<div class="t"><span>GUID：</span></div>
                                     <div class="c">
-										                    <input type="text" class="longIpt" name="programguid" value="<?php echo isset($programguid)?$programguid:""; ?>">
+									    <input type="text" class="longIpt" name="programguid" value="<?php echo isset($programguid)?$programguid:""; ?>">
                                     </div>
                                 </li>
                                 <li>
                                 	<div class="t"><span>操作人：</span></div>
                                     <div class="c">
-										                    <input type="text" class="longIpt" name="operatorname" value="<?php echo isset($operatorname)?$operatorname:""; ?>">
+									    <input type="text" class="longIpt" name="operatorname" value="<?php echo isset($operatorname)?$operatorname:""; ?>">
                                     </div>
                                 </li>
-				 <li>
+				                <li>
                                 	<div class="t"><span>栏目名称：</span></div>
                                      <div class="c">
-				 <input type="text" class="longIpt" name="excolumn" value="<?php echo isset($excolumn)?$excolumn:""; ?>">
+				                        <input type="text" class="longIpt" name="excolumn" value="<?php echo isset($excolumn)?$excolumn:""; ?>">
                                     </div>
-                                  </li>
-				 <li>
+                                </li>
+				                <li>
                                 	<div class="t"><span>频道名称：</span></div>
                                      <div class="c">
-				 <input type="text" class="longIpt" name="exchannel" value="<?php echo isset($exchannel)?$exchannel:""; ?>">
+				                        <input type="text" class="longIpt" name="exchannel" value="<?php echo isset($exchannel)?$exchannel:""; ?>">
                                     </div>
                                   </li>
                                 <li>
@@ -312,33 +312,34 @@ function setArtDialog(message){
                                       <div class="clear"></div>
                                       </div>
                                   </li>
-				<li>
+				                  <li>
                                     <div class="t"><span>平台：</span></div>
                                     <div class="c">
                                         <select name="platform">
                                           <option value="-1">所有</option>
-					  <?php foreach($platform as $k => $v) { ?>
-					  <option <?php if($k == $platform_select){?>selected="selected" <?php }?>value="<?php echo $k;?>"><?php echo $v;?></option>
-					  <?php }?>
+                                          <?php foreach($platform as $k => $v) { ?>
+                                          <option <?php if($k == $platform_select){?>selected="selected" <?php }?>value="<?php echo $k;?>"><?php echo $v;?></option>
+                                          <?php }?>
                                         </select>
                                     </div>
                                 </li>
                             	</ul>
-                            <div class="btns">
-                                <input class="submit" name="my" value="" type="submit"> 
-                            	<a href="#" class="cancl"></a>
-                            </div>                                        
-                            <div class="arral"></div>     
+                                <div class="btns">
+                                    <input class="submit" name="my" value="" type="submit">
+                                    <a href="#" class="cancl"></a>
+                                </div>
+                                <div class="arral"></div>
                             </form>                     
                         </div>
                         <?php elseif(isset($action) && $action == 'show_stats'): ?>
                         <form action="/operatelog/stats" id="NameFinding" accept-charset="utf-8">
                             <input type="text" class="sTxt" name="operatorname" placeholder="请输入操作人名" value="<?php echo isset($operatorname)?$operatorname:""; ?>">
                             <input type="submit" class="sBtn" value="" />
+                            <input type="hidden" name="assist" value="1">
                             <span class="sArral" title="高级搜索"></span>
                         </form>                                         
                         <div class="sDrop" style="display:none">
-                            <form action="/operatelog/stats" accept-charset="utf-8">                         
+                            <form action="/operatelog/stats" accept-charset="utf-8">
                             <ul>
                                 <li>
                                     <div class="t"><span>完成时间：</span></div>
@@ -367,7 +368,7 @@ function setArtDialog(message){
                                     <div class="t"><span>排序：</span></div>
                                     <div class="c">
                                         <select name="sort">
-					    <option value="6"<?php if ($sort == '6') echo ' selected=selected';?>>操作类型</option>
+					                      <option value="6"<?php if ($sort == '6') echo ' selected=selected';?>>操作类型</option>
                                           <option value="1"<?php if ($sort == '1') echo ' selected=selected';?>>用户名</option>
                                           <option value="2"<?php if ($sort == '2') echo ' selected=selected';?>>完成任务数</option>
                                           <option value="3"<?php if ($sort == '3') echo ' selected=selected';?>>完成任务时长</option>
@@ -376,14 +377,14 @@ function setArtDialog(message){
                                         </select>
                                     </div>
                                 </li>
-				<li>
+				                <li>
                                     <div class="t"><span>平台：</span></div>
                                     <div class="c">
                                         <select name="platform">
                                           <option value="-1">所有</option>
-					  <?php foreach($platform as $k => $v) {?>
-					  <option <?php if($k == $platform_select){?>selected="selected" <?php }?>value="<?php echo $k;?>"><?php echo $v;?></option>
-					  <?php }?>
+                                          <?php foreach($platform as $k => $v) {?>
+                                          <option <?php if($k == $platform_select){?>selected="selected" <?php }?>value="<?php echo $k;?>"><?php echo $v;?></option>
+                                          <?php }?>
                                         </select>
                                     </div>
                                 </li>
@@ -399,9 +400,14 @@ function setArtDialog(message){
                     </div>
 
                     <script type="text/javascript">						
-						            /*搜索框的操作*/
+						/*搜索框的操作*/
                         $(document).ready(function(){
-                            var iptDafaultTxt = $("#NameFinding").find("input[name='programname']").val();
+                            var Inputassist = $("#NameFinding").find("input[name='assist']").val();
+                            if (Inputassist) {
+                                var iptDafaultTxt = $("#NameFinding").find("input[name='operatorname']").val();
+                            } else {
+                                var iptDafaultTxt = $("#NameFinding").find("input[name='programname']").val();
+                            }
                             var $stext = $(".z-searchBox").find(".sTxt");
                             if($stext.val()==""){
                                 $stext.val(iptDafaultTxt);
@@ -420,8 +426,14 @@ function setArtDialog(message){
                                 }   
                             });
                             $("#NameFinding").submit(function(){
-                                if($(this).find("input[name='programname']").val() == iptDafaultTxt){
-                                    return false;
+                                if (Inputassist) {
+                                    if ($(this).find("input[name='operatorname']").val() == iptDafaultTxt) {
+                                        return false;
+                                    }
+                                } else {
+                                    if ($(this).find("input[name='programname']").val() == iptDafaultTxt) {
+                                        return false;
+                                    }
                                 }
                                 return true;
                             });

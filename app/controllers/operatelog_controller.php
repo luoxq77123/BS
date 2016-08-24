@@ -175,7 +175,7 @@ class OperatelogController extends AppController {
 			}
 		}
 
-	//按步骤查询
+	    //按步骤查询
 		if (isset($this->passedArgs['operatetype'])) {
 			$operatetype = $this->passedArgs['operatetype'];
 
@@ -241,6 +241,7 @@ class OperatelogController extends AppController {
 				"operatorname" => array("操作人员", 15),
 				"operatetime" => array("完成时间", 20),
 				"operatetype" => array("完成操作", 12),
+                "operateresult" => array("完成状态", 12),
 				"programguid" => array("GUID", 40),
 				);
 
@@ -250,12 +251,14 @@ class OperatelogController extends AppController {
 			} else {
 				$headers['entityid'] = array("媒资ID", 15);
 			}
-
+            $headers['systemid'] = array("平台", 12);
 			$lines = array();
 			foreach ($operatelogs as $operatelog) {
 				$operatelog['Operatelog']['pgmlength'] = format_length($operatelog['Operatelog']['pgmlength']);
 				$operatelog['Operatelog']['operatetype'] = isset($this->operatetypes[$operatelog['Operatelog']['operatetype']]) ? $this->operatetypes[$operatelog['Operatelog']['operatetype']] : $operatelog['Operatelog']['operatetype'];
-				$lines[] = $operatelog['Operatelog'];
+                $operatelog['Operatelog']['operateresult'] = isset($this->operateresults[$operatelog['Operatelog']['operateresult']])?$this->operateresults[$operatelog['Operatelog']['operateresult']]:$operatelog['Operatelog']['operateresult'];
+                $operatelog['Operatelog']['systemid'] = $this->platform[$operatelog['Operatelog']['systemid']];
+                $lines[] = $operatelog['Operatelog'];
 			}
 
 			if ($this->start_date && $this->end_date) {
@@ -281,17 +284,16 @@ class OperatelogController extends AppController {
 
 		$conditions = array();
 
-	//按操作人搜索
+	    //按操作人搜索
 		if (isset($this->passedArgs['operatorname'])) {
 			$operatorname = trim($this->passedArgs['operatorname']);
-
 			if ($operatorname) {
 				$conditions["Operatelog.operatorname LIKE"] = "%" . $operatorname . "%";
 				$this->set("operatorname", $operatorname);
 			}
 		}
 
-	//按步骤搜索
+	    //按步骤搜索
 		if (isset($this->passedArgs['operatetype'])) {
 			$operatetype = $this->passedArgs['operatetype'];
 
@@ -309,10 +311,10 @@ class OperatelogController extends AppController {
 		if ($this->end_date) {
 			$conditions[] = "Operatelog.operatetime <='" . $this->end_date . "'";
 		}
-	//排除状态值为21,22的统计
+	    //排除状态值为21,22的统计
 		$conditions['Operatelog.operatetype not'] = array('21', '22');
 
-	//add 20140127 加入平台查询
+	    //add 20140127 加入平台查询
 		if (isset($this->passedArgs['platform'])) {
 			$platform = trim($this->passedArgs['platform']);
 			if ($platform !== '-1') {

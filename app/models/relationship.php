@@ -72,13 +72,15 @@ class Relationship extends AppModel {
      * @params string 查询条件
      */
 
-    public function GetList($sql = "select * from ET_NM_CNTVPGMREL  where OPERATESTATE = 0 and PGMTYPE = 1") {
-	$list = $this->newFind($sql);
-	foreach ($list as $k => $v) {
-	    $list[$k]['OPERATESTATE'] = $this->GetOperatestate($v['OPERATESTATE']);
-	    $list[$k]['PGMTYPE'] = ($v['PGMTYPE'] == 1) ? '粗编' : '精编';
-	}
-	return $list;
+    public function GetList($sql = "select * from ET_NM_CNTVPGMREL  where OPERATESTATE = 0 and PGMTYPE = 1")
+    {
+        $list = $this->newFind($sql);
+        foreach ($list as $k => $v) {
+            $list[$k]['OPERATESTATE'] = $this->GetOperatestate($v['OPERATESTATE']);
+            $list[$k]['SATUTS'] = $v['OPERATESTATE'];
+            $list[$k]['PGMTYPE'] = ($v['PGMTYPE'] == 1) ? '粗编' : '精编';
+        }
+        return $list;
     }
 
     public function GetChannel() {

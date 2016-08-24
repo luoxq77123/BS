@@ -8,9 +8,7 @@
                             <th class="first">
                                 <!--<input onclick="selectall('ids');" type="checkbox" id="check_boxes" />-->
                             </th>
-                            <th width="300">
-                                节目名称
-                            </th>
+                            <th width="300"> 节目名称 </th>
                             <th>类型</th>
                             <th width="70">提交时间</th>
                             <th>操作人员</th>
@@ -22,16 +20,16 @@
 
 			<?php
 			foreach ($relationship_list as $pgmData) :
-//					         $auditState = (int)$pgmData['tempauditstate'];			
+//					         $auditState = (int)$pgmData['tempauditstate'];
 //					         $tmpTaskID = (int)$pgmData['taskid'];
 //					         if ($auditState != NOT_AUDIT_TASK_STATE){
 //					            $tmpTaskID = -1;
-//					         }			           			        
+//					         }
 			    ?>
     			<tr class="tr_data">
 				<?php if ($pgmData['PGMTYPE'] === '粗编') { ?>
 				    <td>
-					<input class="ids" type="checkbox" name="id[<?php echo $pgmData['PGMGUID']; ?>]" />
+					    <input class="ids" type="checkbox" name="id[<?php echo $pgmData['PGMGUID']; ?>]" />
 				    </td>
 				<?php } else { ?>
 				<script>
@@ -41,7 +39,11 @@
     			<td title="<?php echo $pgmData['PGMNAME']; ?>">
 				<?php
 				if ($pgmData['PGMTYPE'] === '粗编') {
-				    echo '<a href=' . $this->Html->url(array('controller' => 'relationship', 'action' => 'operater', 'GUID' => $pgmData['PGMGUID'])) . '>' . $this->ViewOperation->subStringFormat($pgmData['PGMNAME'], DETAIL_NAME_NUM) . '</a>';
+                    if($pgmData['SATUTS']==2){
+                        echo $pgmData['PGMNAME'];
+                    }else{
+                        echo '<a href=' . $this->Html->url(array('controller' => 'relationship', 'action' => 'operater', 'GUID' => $pgmData['PGMGUID'])) . '>' . $this->ViewOperation->subStringFormat($pgmData['PGMNAME'], DETAIL_NAME_NUM) . '</a>';
+                    }
 				} else {
 				    echo $this->ViewOperation->subStringFormat($pgmData['PGMNAME'], DETAIL_NAME_NUM);
 				}
@@ -49,18 +51,10 @@
     			<td><?php echo $pgmData['PGMTYPE']; ?></td>
     			<td><?php echo substr($pgmData['PGMSUBMITTIME'], 0, 19); ?></td>
     			<td><?php echo $pgmData['OPERATER']; ?></td>
-    			<td>
-				<?php echo $pgmData['OPERATESTATE']; ?>
-    			</td>
-    			<td>
-				<?php echo $pgmData['CHANNELNAME']; ?>
-    			</td>
-    			<td>
-				<?php echo $pgmData['COLUMNNAME']; ?>
-    			</td>
-    			<td>
-				<?php echo $pgmData['PGMGUID']; ?>
-    			</td>
+    			<td><?php echo $pgmData['OPERATESTATE']; ?></td>
+    			<td><?php echo $pgmData['CHANNELNAME']; ?></td>
+    			<td><?php echo $pgmData['COLUMNNAME']; ?></td>
+    			<td><?php echo $pgmData['PGMGUID']; ?></td>
     			</tr>
 			<?php endforeach; ?>
                     </table>
@@ -100,12 +94,12 @@
                 <span class="red"><?php echo $pageParams['options']['limit']; ?></span> 
                 条,当前页次:
                 <span class="red">
-		    <?php
-		    echo $this->Paginator->counter(array(
-			'model' => 'Relationship',
-			'format' => '%page%/%pages%'
-		    ));
-		    ?>
+                <?php
+                    echo $this->Paginator->counter(array(
+                        'model' => 'Relationship',
+                        'format' => '%page%/%pages%'
+                    ));
+                ?>
                 </span>
                 页
             </div>

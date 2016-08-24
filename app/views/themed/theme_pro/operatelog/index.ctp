@@ -16,7 +16,7 @@
                 <th>媒资ID</th>
                 <?php endif; ?>
                 <th style="width:240px;">GUID</th>
-		<th style="width:60px;">平台</th>
+		        <th style="width:60px;">平台</th>
             </tr>
         </thead>
         <tbody>
@@ -35,12 +35,8 @@
                 <?php else:?>
                 <td><?php echo $operatelog['Operatelog']['entityid']; ?></td>
                 <?php endif; ?>
-
                 <td><?php echo $operatelog['Operatelog']['programguid']; ?></td>
-		<td><?php 
-		echo $platform[$operatelog['Operatelog']['systemid']];
-		?>
-		</td>
+		        <td><?php echo $platform[$operatelog['Operatelog']['systemid']];?></td>
             </tr>
             <?php endforeach; ?>
             <?php else:?>
