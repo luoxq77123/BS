@@ -1,16 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="c9dbc289-0947-41cb-bc7c-a3965a53e99a" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/themed/theme_pro/layouts/MLY.ctp" afterPath="$PROJECT_DIR$/app/views/themed/theme_pro/layouts/MLY.ctp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/themed/theme_pro/operatelog/index.ctp" afterPath="$PROJECT_DIR$/app/views/themed/theme_pro/operatelog/index.ctp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/themed/theme_pro/relationship/index.ctp" afterPath="$PROJECT_DIR$/app/views/themed/theme_pro/relationship/index.ctp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/controllers/operatelog_controller.php" afterPath="$PROJECT_DIR$/app/controllers/operatelog_controller.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/views/themed/theme_pro/layouts/opl.ctp" afterPath="$PROJECT_DIR$/app/views/themed/theme_pro/layouts/opl.ctp" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/models/relationship.php" afterPath="$PROJECT_DIR$/app/models/relationship.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/controllers/relationship_controller.php" afterPath="$PROJECT_DIR$/app/controllers/relationship_controller.php" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-    </list>
+    <list default="true" id="c9dbc289-0947-41cb-bc7c-a3965a53e99a" name="Default" comment="" />
     <ignored path="BS.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -183,7 +174,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../xBuilder" />
     <property name="FullScreen" value="false" />
   </component>
   <component name="PublishConfig">
