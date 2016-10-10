@@ -1,48 +1,50 @@
-<?php
+﻿<?php
 App::import('Model', 'Content');
-App::import('Model', 'Flatform');
+APP::import('Model', 'ColumnPolicy');
 App::import('Vendor', 'DbHandle', array('file' => 'webservices' . DS . 'DB_Operation' . DS  . 'class.db_handle.php'));
 
 App::import('Vendor', 'Array2Xml2Array', array('file' => 'xmlandarray' . DS . 'class.array2xml2array.php'));
-App::import('Vendor', 'BitOperation', array('file' => 'someoperation' . DS . 'class.bit_operation.php'));
 App::import('Vendor', 'NumericArray', array('file' => 'someoperation' . DS . 'class.numeric_array.php'));
-class AuditTaskMpcOperation extends Object{
+class AuditTaskMpcCntvOperation extends Object{
 	public $content;
-	public $flatFormParam;
+	public $columnPolicy;
 
 	public $mpcArray = array();
 	public $updateMpcArray = array();
 	public $newTaskInfosMpc = array();
 
 	public $documentTaskInfo = array();
-	public $mediaBaseInfo = array();
 	public $editCatalog = array();
+	public $sobeyExchangeProtocal = array();
+	public $entityData = array();
 
-	public $workFlowID;
-	public $workFlowType;
-	public $newWorkFlowType;
+
+	public $columnID;
+	public $serverIP;
+	public $policyID;
+	public $mqName;
 
 	//元数据信息
-	public $flatFormItem;
 	public $keyAttributeItem;
-	public $platFormNumber;
 
 	public function __construct(){
 		$this->content = new Content();
-		$this->flatFormParam = new Flatform();
+		$this->columnPolicy = new ColumnPolicy();
 	}
 	/**
 	 *
 	 * 初始化数据
 	 * @param int $taskID
-	 * @param int $platFormNumber
 	 */
 	public function initData($taskID,$_metaData = NULL,$workflowID=NULL){
 		if (!$taskID){
 			$this->log('MPC报文处理：任务ID为空');
 			return false;
 		}
-		$theData = $this->content->find('first',array('fields'=>array('mpctaskinfo'),'conditions'=> array('taskid'=>$taskID)));
+
+		$theData = $this->content->find('first',array('fields'=>array('pgmcolumnid','mpctaskinfo'),'conditions'=> array('taskid'=>$taskID)));
+		$this->columnID = (int)$theData['Content']['pgmcolumnid'];
+
 		$mpcXmlData = $theData['Content']['mpctaskinfo'];
 		$mpcArray = Array2Xml2Array::xml2array($mpcXmlData);
 
@@ -51,9 +53,13 @@ class AuditTaskMpcOperation extends Object{
 
 		$newTaskInfoMpcA = array();
 		$documentTaskInfoA = array();
+		$sobeyExchangeProtocalA = array();
 		foreach ($taskInfoMpc as $oneTaskInfoMpc){
 			if ($oneTaskInfoMpc['Scope'] == 'DocumentInfo'){
 				$documentTaskInfoA = $oneTaskInfoMpc;
+			}
+			elseif ($oneTaskInfoMpc['Scope'] == 'tv_SobeyExchangeProtocal'){
+				$sobeyExchangeProtocalA = $oneTaskInfoMpc;
 			}
 			else {
 				$newTaskInfoMpcA[] = $oneTaskInfoMpc;
@@ -64,37 +70,15 @@ class AuditTaskMpcOperation extends Object{
 		$this->newTaskInfosMpc = $newTaskInfoMpcA;
 
 		$this->documentTaskInfo = $documentTaskInfoA;
-		$this->mediaBaseInfo = $documentTaskInfoA['Data']['DocumentInfo']['NewMediaBaseInfo'];
-		$this->editCatalog = $documentTaskInfoA['Data']['DocumentInfo']['EDITCATALOG'];
+		$this->editCatalog = $documentTaskInfoA['Data']['DocumentInfo']['CNTVInfo'];
+		$this->sobeyExchangeProtocal = $sobeyExchangeProtocalA;
+		$this->entityData = $sobeyExchangeProtocalA['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData'];
 
 		//元数据项
 		$metaData = $_metaData;
 		extract($metaData);
-		$this->flatFormItem = $platFormArray;
 		$this->keyAttributeItem = $newKeyAttributeArray;
-		//$this->log('keyMPC:');
-		//$this->log($this->keyAttributeItem);
 
-		$this->platFormNumber = $this->_getPlatFormNumber();
-
-
-		if(IS_UPDATE_WORK_FLOW){
-			$workFlow = $this->mediaBaseInfo['WorkFlow'];
-			$this->workFlowID = (int)$workflowID;
-			$this->workFlowType = (int)$workFlow['WorkFlowType'];
-
-			//$this->log('platFormNumber:');
-			//$this->log($this->platFormNumber);
-			//$this->log('pre_workflowType:');
-			//$this->log($this->workFlowType);
-			if ($this->platFormNumber){
-				$tworkFlowType = BitOperation::shr32($this->workFlowType, WORKFLOW_CHANGE_BIT);
-				$ttworkFlowType = BitOperation::shl32($tworkFlowType, WORKFLOW_CHANGE_BIT);
-				$this->newWorkFlowType = $ttworkFlowType+$this->platFormNumber;
-			}
-			//$this->log('new_workflowType:');
-			//$this->log($this->newWorkFlowType);
-		}
 		return true;
 	}
 	/**
@@ -102,21 +86,30 @@ class AuditTaskMpcOperation extends Object{
 	 * 获取流程ID
 	 */
 	public function getWorkFlowID(){
-		return $this->workFlowID;
+		return NULL;
 	}
 	/**
 	 *
 	 * 获取新的流程Type
 	 */
 	public function getNewWorkFlowType(){
-		return $this->newWorkFlowType;
+		return NULL;
 	}
 	/**
 	 *
 	 * 获取编辑方式
 	 */
 	public function getWorkStationType(){
-		return $this->mediaBaseInfo['WorkStationType'];
+		$cntvInfo = $this->documentTaskInfo['Data']['DocumentInfo']['CNTVInfo'];
+		$cntvAttribute = NumericArray::toNumericArray($cntvInfo['AttributeItem']);
+		if ($cntvAttribute){
+			foreach ($cntvAttribute as $item) {
+				if ($item['ItemCode'] == 'TYPE'){
+					return $item['Value'];
+				}
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -127,49 +120,50 @@ class AuditTaskMpcOperation extends Object{
 		$newMpcArray = $this->mpcArray;
 		$newTaskInfoMpc = $this->newTaskInfosMpc;
 
-		$newDocumentTaskInfo = $this->documentTaskInfo;
-		$newMediaBaseInfo = $this->mediaBaseInfo;
-		$newEditCatalog = $this->editCatalog;
+		$newDocumentTaskInfo = $this->documentTaskInfo;		
+		
+		$newSobeyExchangeProtocal = $this->sobeyExchangeProtocal;
+		$newEntityData = $this->entityData;
 
-		$platForms = array('PlatFormInfo'=>$this->flatFormItem);
-		//策略ID及更新字段		
-		$policyID = $this->_getPolicyID();		
-		$editCatalogItems = $this->_getUpdatedEditCatalogItems($taskIDData);
+		//策略ID及更新字段
+		$this->policyID = $this->_getPolicyID();
+		$newEditCatalog = $this->_getUpdatedEditCatalogItems();
 
-		//获取到更新后的Mpc报文
-		$newMediaBaseInfo['PlatFormInfos'] = $platForms;
-		$newMediaBaseInfo['WorkFlow']['WorkFlowType'] = $this->newWorkFlowType;
-		$newEditCatalog['AttributeItem'] = $editCatalogItems;
+		$entityDataItems = $this->_getUpdateContentInfo($taskIDData);
 
-		$newDocumentTaskInfo['Data']['DocumentInfo']['NewMediaBaseInfo'] = $newMediaBaseInfo;
-		$newDocumentTaskInfo['Data']['DocumentInfo']['EDITCATALOG'] = $newEditCatalog;
-		$newTaskInfoMpc[] = $newDocumentTaskInfo;
-
-		$newMpcArray['MPC']['Content']['AddTask']['TaskInfo'] = $newTaskInfoMpc;
-		$newMpcArray['MPC']['Content']['AddTask']['PolicyID'] = $policyID;
 
 		//特殊值处理
 		$editAttributes= Configure::read('editedAttributes');
 		if (defined('PGMNAME') && in_array(PGMNAME, $editAttributes)){
-			if (isset($this->keyAttributeItem['Title'])){
-				$newMpcArray['MPC']['Content']['AddTask']['BaseInfo']['TaskName'] = $this->keyAttributeItem['Title']['Value'];
+			if (isset($this->keyAttributeItem['PgmName'])){
+				$newPgmName = $this->keyAttributeItem['PgmName']['Value'];
+				$newMpcArray['MPC']['Content']['AddTask']['BaseInfo']['TaskName'] = $newPgmName;
+				$newDocumentTaskInfo['Data']['DocumentInfo']['PGMNAME'] = $newPgmName;
+				$newDocumentTaskInfo['Data']['DocumentInfo']['EDITCATALOG']['PGMNAME'] = $newPgmName;
 			}
 		}
-		if (defined('CATALOG') && in_array(CATALOG, $editAttributes)){
-			if (isset($this->keyAttributeItem['CatalogType'])){
-				$newMpcArray['MPC']['Content']['AddTask']['BaseInfo']['ColumnName'] = $this->keyAttributeItem['CatalogType']['Value'];
-			}
-		}
+			
+		//获取到更新后的Mpc报文
+		$newDocumentTaskInfo['Data']['DocumentInfo']['CNTVInfo'] = $newEditCatalog;
+		
+		$newEntityData['AttributeItem'] = $entityDataItems;
+		$newSobeyExchangeProtocal['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData'] = $newEntityData;
+		
+		$newTaskInfoMpc[] = $newDocumentTaskInfo;
+		$newTaskInfoMpc[] = $newSobeyExchangeProtocal;
+
+		$newMpcArray['MPC']['Content']['AddTask']['TaskInfo'] = $newTaskInfoMpc;
+		$newMpcArray['MPC']['Content']['AddTask']['PolicyID'] = $this->policyID;
+
+		//更新优先级别
+		$newMpcArray['MPC']['Content']['AddTask']['BaseInfo']['TaskPriority'] = 0;
 
 		$this->updateMpcArray = $newMpcArray;
-		//$this->log('newMPC:');
-		//$this->log($this->updateMpcArray);
 	}
 	/**
 	 *
 	 * 回写Mpc报文
 	 * @param array $taskIDData
-	 * @param array $platForms
 	 */
 	public function rewriteMpc($taskIDData){
 		//进行MPC回写
@@ -198,6 +192,7 @@ class AuditTaskMpcOperation extends Object{
 		return $mpcUpdState;
 	}
 	public function commitMpc(){
+		$this->log('MPC调度：columnid->'.$this->columnID.';serverip->'.$this->serverIP.';policyid->'.$this->policyID,LOG_DEBUG);
 		//流程发起处理
 		$nextMpcArray = array('MPCWebCmd' => array(
 					               'CommandType' => 'AddTask',
@@ -205,12 +200,15 @@ class AuditTaskMpcOperation extends Object{
 		$nextMpcXml = new Xml($nextMpcArray,array('format' => 'tags'));
 		$nextMpcXml->options(array('cdata'=>false));
 		$nextMpcXmlStr = $nextMpcXml->toString();
+
 		try {
-			$mpcClient = new SoapClient(WS_DOMAIN.'/mpcinterface.wsdl', array('encoding' => 'UTF-8'));
-			$mpcResult = $mpcClient->mpccommit($nextMpcXmlStr);
+			header("content-type:text/html;charset=utf-8");
+			$clientSoap = new SoapClient(MPC_WS_DOMAIN.'/mpc/CallSobeyInterface.asmx?wsdl');
+			$mpcResult = $clientSoap->__soapCall('CallSobeyMpc', array('parameters'=>array('mpcXml'=>$nextMpcXmlStr)));
 		} catch (Exception $e) {
 			$this->log('MPC发起任务：'.$e->getMessage());
 		}
+
 		//将返回结果写入文件
 		$mpcReFilePath = WEBROOT_DOMAIN.MPC_RETRUN_FILENAME.'.xml';
 		$mpcFile = fopen($mpcReFilePath, 'w');
@@ -223,10 +221,9 @@ class AuditTaskMpcOperation extends Object{
 		}
 		return $resultState;
 	}
-	private function _getCommitMpcResultState($theReturn){
-		$dataArray = Array2Xml2Array::xml2array($theReturn);
-		$status = (int)$dataArray['MPCWebCmd']['Rtn_AddTask']['MPC_Status']['Status'];
-		if ($status==1){
+	private function _getCommitMpcResultState($result){
+		$data = $result->CallSobeyMpcResult;
+		if ($data=='Success') {
 			return true;
 		}
 		return false;
@@ -236,53 +233,14 @@ class AuditTaskMpcOperation extends Object{
 	 * 获取策略ID
 	 */
 	private function _getPolicyID(){
-		//获取视频制式
-		$videoStandard = $this->mediaBaseInfo['VideoStandard'];
-		$videoStandardNumbert = (int)$videoStandard;
-		if($videoStandardNumbert == 1){
-			$videoStandardNumber=0;
-		}
-		elseif ($videoStandardNumbert == 16){
-			$videoStandardNumber=1;
-		}
-
-		//获取策略ID
-		$workStationNum = BitOperation::shl32(XCUT_WORKSTATION_DEFAULT, XCUT_WORKSTATION_BIT);
-		$productNum = BitOperation::shl32(XCUT_PRODUCT_DEFAULT, XCUT_PRODUCT_BIT);
-		$videoStandardNum = BitOperation::shl32($videoStandardNumber, XCUT_VIDEOSTANDARD_BIT);
-		$convertNum = BitOperation::shl32(XCUT_CONVERT_DEFAULT, XCUT_CONVERT_BIT);
-		$censorNum = BitOperation::shl32(XCUT_CENSOR_DEFAULT, XCUT_CENSOR_BIT);
-
-		$paramType = $workStationNum+$productNum+$videoStandardNum+$convertNum+$censorNum;
-
-		$policy = $this->flatFormParam->find('first',array('fields'=>array('policyid'),'conditions'=>array('compoundid'=>$this->platFormNumber,'paramtype'=>$paramType)));
+		$policy = $this->columnPolicy->find('first',array('fields'=>array('policyid','serverip','mqname'),'conditions'=>array('columnid'=>$this->columnID,'usetype'=>5)));
 		if ($policy){
-			return (int)$policy['Flatform']['policyid'];
+			$this->serverIP = $policy['ColumnPolicy']['serverip'];
+			$this->mqName = $policy['ColumnPolicy']['mqname'];
+			return (int)$policy['ColumnPolicy']['policyid'];
 		}
 		$this->log('MPC报文处理：获取策略ID失败');
 		return 0;
-	}
-	/**
-	 *
-	 * 获取平台代号
-	 * @param array $platForms
-	 */
-	private function _getPlatFormNumber(){
-		$thePlatForms = $this->flatFormItem;
-		if (!$thePlatForms){
-			return 0;
-		}
-
-		$platFormNumber = 0;
-		$platFormInfo = NumericArray::toNumericArray($thePlatForms);
-		foreach ($platFormInfo as $tempPlat) {
-			$selectState = (int)$tempPlat['IsSelected'];
-			if($selectState == IS_SELECTED){
-				$platFormID = (int)$tempPlat['PlatFormID'];
-				$platFormNumber += $platFormID;
-			}
-		}
-		return $platFormNumber;
 	}
 	/**
 	 *
@@ -290,8 +248,16 @@ class AuditTaskMpcOperation extends Object{
 	 * @param array $taskIDData
 	 */
 	private function _getUpdatedEditCatalogItems($taskIDData){
-		//获取审核人以及审核时间
-		//		$updateAddItems = array();
+		$newEditCatalog = $this->editCatalog;
+		if (isset($this->keyAttributeItem['PgmName'])){
+			$newEditCatalog['PGMNAME'] = $this->keyAttributeItem['PgmName']['Value'];
+		}
+		if (isset($this->keyAttributeItem['PgmName_Modify'])){
+			$newEditCatalog['PGMNAME_Modify'] = $this->keyAttributeItem['PgmName_Modify']['Value'];
+		}
+		return $newEditCatalog;
+	}
+	private function  _getUpdateContentInfo($taskIDData){
 		$theAddItems = array();
 		foreach ($taskIDData as $tempdata) {
 			$tempType = (int)$tempdata['Content']['tasktype'];
@@ -319,9 +285,20 @@ class AuditTaskMpcOperation extends Object{
 				}
 			}
 		}
-
-		//
-		$keyAttributeArray = $this->keyAttributeItem;
+		
+		$entityDataItems = $this->entityData['AttributeItem'];
+		$entityDataItems = NumericArray::toNumericArray($entityDataItems);
+		
+		$keyAttributeArray = array();
+		foreach ($entityDataItems as $theOneItem) {
+			$theKey = $theOneItem['ItemCode'];
+			$keyAttributeArray[$theKey] = $theOneItem;
+		}
+		
+	    //更新素材名
+	    $keyAttributeArray['ClipName']['Value'] = $this->keyAttributeItem['PgmName']['Value'];
+		
+		//获取Content
 		$attributeCode = array_keys($keyAttributeArray);
 
 		foreach ($theAddItems as $tmpUpdateCode=>$tmpUpdateItem) {
@@ -336,9 +313,7 @@ class AuditTaskMpcOperation extends Object{
 				$keyAttributeArray[$tmpUpdateCode] = $tmpUpdateItem;
 			}
 		}
-		//$this->log('newKey:');
-		//$this->log($keyAttributeArray);
 
-		return array_values($keyAttributeArray);
+		return array_values($keyAttributeArray);		
 	}
 }

@@ -1,4 +1,6 @@
 <?php
+error_reporting(0);
+ini_set('display_errors',false);
 /**
  * An extended reflection/documentation class for class methods
  *
@@ -67,6 +69,7 @@ class IPReflectionMethod extends reflectionMethod{
 	public function getParameters(){
 		$this->parameters = Array();
 		$ar = parent::getParameters();
+		print_r($ar);
 		$i = 0;
 
 		foreach((array)$ar as $parameter){

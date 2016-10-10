@@ -1,0 +1,9 @@
+$mpcArr = $conn['MPC']['Content']['AddTask']['TaskInfo'];
+foreach ($mpcArr as $k => $v) {
+            if ($v['Scope'] === 'tv_SobeyExchangeProtocal') {
+                $arr = $mpcArr[$k]['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'];
+           
+                break;
+            }
+        }
+var_dump($arr);exit;

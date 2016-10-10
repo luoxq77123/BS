@@ -77,9 +77,9 @@ class AuditTaskUpdateOperation extends Object{
 			$taskIDData = $this->_getTaskIDsWithGroupID();
 			$isFinal = $this->_judgeTaskIsFinal($taskIDData);
 			$mpcState=true;
-			if ($isFinal){		
-				//流程发起处理			
-				$this->mpcOperation->setNewMpc($taskIDData);			
+			if ($isFinal){
+				//流程发起处理
+				$this->mpcOperation->setNewMpc($taskIDData);
 				$commitStateMain = $this->mpcOperation->commitMpc(1);
 				$commitStateSpare = false;
 				if (!$commitStateMain){
@@ -575,6 +575,7 @@ class AuditTaskUpdateOperation extends Object{
 
 		$prePlatFormArray = $array['PlatFormInfo'];
 		$preAttributeArray = $array['AttributeItem'];
+
 		//平台信息更新
 		$platFormArray = array();
 		if ($platFormUpdate){
@@ -614,13 +615,6 @@ class AuditTaskUpdateOperation extends Object{
 				}
 				$keyAttributeArray[$currentCode] = $this->format_sepcial_chars($tmpAttribute);
 			}
-			//新增一级分类，二级分类，关键词，内容概要
-            $ItemCodeArr = array('MAMClass','MAMSecondClass','Keywords','Summary');
-            foreach($ItemCodeArr as $ItemCod){
-                if(isset($metaDataUpdate[$ItemCod])){
-                    $keyAttributeArray[$ItemCod] = $metaDataUpdate[$ItemCod];
-                }
-            }		
 		}
 
 		$newKeyAttributeArray = $this->updateLogOperation($metaDataUpdate, $keyAttributeArray);
@@ -719,7 +713,7 @@ class AuditTaskUpdateOperation extends Object{
 	}
 	//转义XML特殊字符
 	protected function format_sepcial_chars($str) {
-	$str = str_replace('&', '&amp;', $str);
+//	$str = str_replace('&', '&amp;', $str);
 	$str = str_replace('<', '&lt;', $str);
 	$str = str_replace('>', '&gt;', $str);
 	$str = str_replace("'", '&apos;', $str);

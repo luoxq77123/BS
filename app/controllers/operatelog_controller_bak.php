@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 App::import('Vendor', 'PHPExcel', array('file' => 'phpexcel' . DS . 'PHPExcel.php'));
 
@@ -136,6 +136,7 @@ class OperatelogController extends AppController {
 
     //操作记录列表
 	public function index() {
+	$t1 = microtime(true);
 	//判断是否为导出
 		if (isset($this->passedArgs['export']) && $this->passedArgs['export'] == 'excel') {
 			$export = 'excel';
@@ -148,6 +149,7 @@ class OperatelogController extends AppController {
 	//按标题搜索
 		if (isset($this->passedArgs['programname'])) {
 			$programname = trim($this->passedArgs['programname']);
+
 			if ($programname) {
 				$conditions["Operatelog.programname LIKE"] = "%" . $programname . "%";
 				$this->set("programname", $programname);
@@ -194,7 +196,7 @@ class OperatelogController extends AppController {
 		}
 		$limit = 100;
 		if ($export) {
-			$limit = 10000;
+			$limit = 100000;
 			$this->passedArgs['page'] = 1;
 		}
 		$order = 'Operatelog.operatetime DESC';
@@ -220,7 +222,7 @@ class OperatelogController extends AppController {
 			}
 		}
 	//排除状态值为21,22的统计
-		$conditions['Operatelog.operatetype not'] = array('21', '22');
+		//$conditions['Operatelog.operatetype not'] = array('21', '22');
 
 		$this->paginate = array(
 			'paramType' => 'querystring',
@@ -228,20 +230,21 @@ class OperatelogController extends AppController {
 			'order' => $order,
 			'limit' => $limit
 			);
-
 		$operatelogs = $this->paginate('Operatelog');
-
+//$this->log($this->Operatelog->getDataSource()->getLog(false,false));
+//var_dump($operatelogs[0]);exit;
 		if ($export == 'excel') {
 			//add 20140320 
-			ini_set('memory_limit', '256M');
+			//ini_set('memory_limit', '256M');
 			$headers = array(
 				"programname" => array("节目名称", 15),
 				"pgmlength" => array("节目时长", 12),
 				"operatorname" => array("操作人员", 15),
 				"operatetime" => array("完成时间", 20),
 				"operatetype" => array("完成操作", 12),
-				"operateresult" => array("完成状态", 12),
-				"programguid" => array("GUID", 40),				
+				//"operateresult"=>array("完成状态",12),
+				"programguid" => array("GUID", 40),
+                                //"systemid"=>array("平台",12),
 				);
 
 			if (!defined("OPERATELOG_SHOW_EX") || OPERATELOG_SHOW_EX) {
@@ -250,13 +253,13 @@ class OperatelogController extends AppController {
 			} else {
 				$headers['entityid'] = array("媒资ID", 15);
 			}
-			$headers['systemid'] = array("平台", 12);
+
 			$lines = array();
 			foreach ($operatelogs as $operatelog) {
 				$operatelog['Operatelog']['pgmlength'] = format_length($operatelog['Operatelog']['pgmlength']);
 				$operatelog['Operatelog']['operatetype'] = isset($this->operatetypes[$operatelog['Operatelog']['operatetype']]) ? $this->operatetypes[$operatelog['Operatelog']['operatetype']] : $operatelog['Operatelog']['operatetype'];
-				$operatelog['Operatelog']['operateresult'] = isset($this->operateresults[$operatelog['Operatelog']['operateresult']])?$this->operateresults[$operatelog['Operatelog']['operateresult']]:$operatelog['Operatelog']['operateresult'];
-                $operatelog['Operatelog']['systemid'] = $this->platform[$operatelog['Operatelog']['systemid']];
+				//$operatelog['Operatelog']['operateresult'] = isset($this->operateresults[$operatelog['Operatelog']['operateresult']])?$this->operateresults[$operatelog['Operatelog']['operateresult']]:$operatelog['Operatelog']['operateresult'];
+                		//$operatelog['Operatelog']['systemid'] = $platform[$operatelog['Operatelog']['systemid']];
 				$lines[] = $operatelog['Operatelog'];
 			}
 
@@ -282,10 +285,11 @@ class OperatelogController extends AppController {
 		}
 
 		$conditions = array();
+
 	//按操作人搜索
 		if (isset($this->passedArgs['operatorname'])) {
 			$operatorname = trim($this->passedArgs['operatorname']);
-			
+
 			if ($operatorname) {
 				$conditions["Operatelog.operatorname LIKE"] = "%" . $operatorname . "%";
 				$this->set("operatorname", $operatorname);

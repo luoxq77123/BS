@@ -127,14 +127,10 @@ class AuditTaskMpcCntvOperation extends Object{
 		
 		$newSobeyExchangeProtocal = $this->sobeyExchangeProtocal;
 		$newEntityData = $this->entityData;
-
 		//策略ID及更新字段
 		$this->policyID = $this->_getPolicyID();
-		$newEditCatalog = $this->_getUpdatedEditCatalogItems();
-
+		$newEditCatalog = $this->_getUpdatedEditCatalogItems($taskIDData);
 		$entityDataItems = $this->_getUpdateContentInfo($taskIDData);
-
-
 		//特殊值处理
 		$editAttributes= Configure::read('editedAttributes');
 		if (defined('PGMNAME') && in_array(PGMNAME, $editAttributes)){
@@ -160,7 +156,6 @@ class AuditTaskMpcCntvOperation extends Object{
 
 		//更新优先级别
 		$newMpcArray['MPC']['Content']['AddTask']['BaseInfo']['TaskPriority'] = 0;
-
 		$this->updateMpcArray = $newMpcArray;
 	}
 	/**
@@ -222,7 +217,6 @@ class AuditTaskMpcCntvOperation extends Object{
 
                 $r = str_replace('<?xml version="1.0" encoding="UTF-8"?>', '', $r);
                 $nextMpcXmlStr = trim($r);
-				//$this->log($nextMpcXmlStr);
 		try {
 			header("content-type:text/html;charset=utf-8");
 			$clientSoap = new SoapClient(MPC_WS_DOMAIN.'/mpc/CallSobeyInterface.asmx?wsdl');
@@ -274,6 +268,10 @@ class AuditTaskMpcCntvOperation extends Object{
 		$newEditCatalog = $this->editCatalog;
 		if (isset($this->keyAttributeItem['PgmName'])){
 			$newEditCatalog['PGMNAME'] = $this->keyAttributeItem['PgmName']['Value'];
+			$newEditCatalog['PgmCategory'] = $this->keyAttributeItem['MAMClass']['Value'];
+			$newEditCatalog['PgmSndClass'] = $this->keyAttributeItem['MAMSecondClass']['Value'];
+			$newEditCatalog['Keyword'] = $this->keyAttributeItem['Keywords']['Value'];
+			$newEditCatalog['Dsc'] = $this->keyAttributeItem['Summary']['Value'];
 		}
 		if (isset($this->keyAttributeItem['PgmName_Modify'])){
 			$newEditCatalog['PGMNAME_Modify'] = $this->keyAttributeItem['PgmName_Modify']['Value'];
@@ -320,10 +318,12 @@ class AuditTaskMpcCntvOperation extends Object{
 		
 	    //更新素材名
 	    $keyAttributeArray['ClipName']['Value'] = $this->keyAttributeItem['PgmName']['Value'];
-		
+		$keyAttributeArray['MAMClass']['Value'] = $this->keyAttributeItem['MAMClass']['Value'];
+	    $keyAttributeArray['MAMSecondClass']['Value'] = $this->keyAttributeItem['MAMSecondClass']['Value'];
+	    $keyAttributeArray['Keywords']['Value'] = $this->keyAttributeItem['Keywords']['Value'];
+	    $keyAttributeArray['Summary']['Value'] = $this->keyAttributeItem['Summary']['Value'];
 		//获取Content
 		$attributeCode = array_keys($keyAttributeArray);
-
 		foreach ($theAddItems as $tmpUpdateCode=>$tmpUpdateItem) {
 			if (in_array($tmpUpdateCode, $attributeCode)){
 				//更新

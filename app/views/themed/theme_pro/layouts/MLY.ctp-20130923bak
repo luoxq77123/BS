@@ -5,7 +5,7 @@
         <title>内容审核系统</title>
 	<?php echo $this->Html->css('style.css'); ?>
 
-        <script type="text/javascript" src="<?php echo $this->webroot; ?>js/jquery.min.js"></script>
+        <script type="text/javascript" src="<?php echo $this->webroot; ?>js/jquery1.7.2.js"></script>
         <script type="text/javascript" src="<?php echo $this->webroot; ?>js/main.js"></script>
         <script type="text/javascript" src="<?php echo $this->webroot; ?>js/jquery.lazyload.js"></script>
         <script type="text/javascript" src="<?php echo $this->webroot; ?>js/hScrollPane.js"></script>
@@ -58,15 +58,11 @@
     			<a class="red" href="#" onclick="cxSubmit(4, 3);" style="color:#ef0619;"><?php if (isset($layoutParams['allCount'])) echo $layoutParams['allCount']; ?></a>		         
     			条待审核节目 |
 			<?php }; ?>
-			<?php if (defined("OPERATELOG_SHOW") && OPERATELOG_SHOW && !isset($is_operator)): ?><a href="<?php echo $this->Html->url(array('controller' => 'operatelog', 'action' => 'index', 'start_date' => date('Y-m-d H:i:s', time() - 60 * 60 * 24 * 40), 'end_date' => date('Y-m-d H:i:s'))); ?>">操作记录</a> |<?php endif; ?>
+			<?php if (defined("OPERATELOG_SHOW") && OPERATELOG_SHOW && !isset($is_operator)): ?><a href="<?php echo $this->Html->url(array('controller' => 'operatelog')); ?>">操作记录</a> |<?php endif; ?>
 			<?php if (!isset($relationship) || isset($relationship_operation)) {
 			    ?>
-			<!--add1018 for 关联权限-->
-			<?php if(isset($user_relation_per) && $user_relation_per) {
-			    ?>
     			<a href="<?php echo $this->Html->url(array('controller' => 'relationship', 'action' => 'index', 'begintime' => date('Y-m-d H:i:s', time() - 60 * 60 * 24), 'endtime' => date('Y-m-d H:i:s'))); ?>">节目关联</a> |
-			<?php }?>
-			    <?php } ?>
+			<?php } ?>
 			<?php
 			if (isset($relationship) && !isset($relationship_operation)) {
 			    if (isset($is_operator)) {
@@ -115,14 +111,9 @@
 			    <?php } ?>
 			    </li>
                         </ul>
-			<?php if(!isset($relationship_operation) && !isset($is_operator) && isset($relationship)) {
-			 echo $this->element('search_dialog', array('findarr' => $findingArr));
-			    ?>
-			
-			<?php }?>
                         <div class="fr">
                             <!--搜索框 开始 modifiedDate:2013-3-5-->
-				<?php if (!isset($relationship)) { ?>
+				<?php if (!isset($no_searchbox)) { ?>
     			    <div class="z-searchBox">
     				<form action="<?php
 					  if (isset($relationship)) {
@@ -228,7 +219,7 @@
 					</div>
 					<?php
 				    }elseif (!isset($relationship_operation)) {
-//					echo $this->element('search_dialog', array('findarr' => $findingArr));
+					echo $this->element('search_dialog', array('findarr' => $findingArr));
 				    }
 				    ?>
     			    </div>
@@ -350,7 +341,7 @@
         <script type="text/javascript">
 	    //遮罩
 	    $(document).ready(function() {
-<?php if (!isset($relationship)) { ?>
+<?php if (isset($Relationship)) { ?>
     		$(document).bind("contextmenu", function(e) {
     		    return false;
     		});
@@ -391,4 +382,3 @@
         </script>
     </body>
 </html>
-<?php  //echo $this->element('sql_dump'); ?>

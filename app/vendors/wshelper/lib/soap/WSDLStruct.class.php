@@ -129,8 +129,9 @@ class WSDLStruct {
 			$binding = $this->addBinding($serviceName);
 
 			//loop the operations
-			foreach((array)$service->methods as $operation){
+			foreach((array)$service->methods as $operation){	
 				$operationName = $operation->name;
+				if($operationName == 'assoc_unique')continue;
 				$operationTag = $this->addOperation($operationName, $serviceName);
 
 				//input
@@ -157,7 +158,7 @@ class WSDLStruct {
 					$output = $this->addElement("wsdl:output", $operationTag);
 					$output->setAttribute("message", "tns:".$messageName);
 					$this->addOutput($this->bindingOperationTags[$serviceName][$operationName]);
-					$this->addMessage($messageName,Array($operation->name."Return" => $operation->return));
+					$this->addMessage($messageName,array($operation->name."Return" => $operation->return));
 				}
 			}
 			// SH. now add the portType and binding
@@ -276,6 +277,7 @@ class WSDLStruct {
 		$this->addToDebug("Adding message: '$name'");
 		$msg = $this->addElement("message", $this->definitions);
 		$msg->setAttribute("name", $name);
+
 		foreach((array)$parts as $partName => $partType){
 			$this->addToDebug("Adding Message part: '$partName => $partType'");
 			$part=$this->addElement("part", $msg);

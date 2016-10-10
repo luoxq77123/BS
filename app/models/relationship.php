@@ -72,15 +72,15 @@ class Relationship extends AppModel {
      * @params string 查询条件
      */
 
-    public function GetList($sql = "select * from ET_NM_CNTVPGMREL  where OPERATESTATE = 0 and PGMTYPE = 1")
-    {
-        $list = $this->newFind($sql);
-        foreach ($list as $k => $v) {
-            $list[$k]['OPERATESTATE'] = $this->GetOperatestate($v['OPERATESTATE']);
-            $list[$k]['SATUTS'] = $v['OPERATESTATE'];
-            $list[$k]['PGMTYPE'] = ($v['PGMTYPE'] == 1) ? '粗编' : '精编';
-        }
-        return $list;
+    public function GetList($sql = "select * from ET_NM_CNTVPGMREL  where OPERATESTATE = 0 and PGMTYPE = 1") {
+	$list = $this->newFind($sql);
+
+	foreach ($list as $k => $v) {
+	    $list[$k]['OPERATESTATE'] = $this->GetOperatestate($v['OPERATESTATE']);
+	    $list[$k]['SATUTS'] =$v['OPERATESTATE'];
+	    $list[$k]['PGMTYPE'] = ($v['PGMTYPE'] == 1) ? '粗编' : '精编';
+	}
+	return $list;
     }
 
     public function GetChannel() {
@@ -132,7 +132,24 @@ class Relationship extends AppModel {
 	foreach ($id_s as $k => $v) {
 	    foreach ($list as $kk => $vv) {
 		if ($vv['PGMGUID'] == $v) {
-		    $list_array[] = array('ClipName' => $this->format_sepcial_chars($vv['PGMNAME']), 'ClipGUID' => $vv['PGMGUID'], 'ClipLength' => $vv['PGMLENGTH'], 'InPoint' => 0, 'OutPoint' => $vv['PGMLENGTH'] * 400000, 'Producer' => $vv['OPERATER'], 'ShowDate' => $submittime, 'PlayChannel' => $channelname, 'ColumnName' => $vv['COLUMNNAME'], 'FilePath' => $this->formatStr($vv['PGMAUDIOPATH']), 'SerialNumber' => $k + 1);
+			$theData = $this->find('first', array('fields' => array('mpcxml'), 'conditions' => array('PGMGUID' => $v)));
+			$mpcArray = Array2Xml2Array::xml2array($theData['Relationship']['mpcxml']);
+			foreach($mpcArray['MPC']['Content']['AddTask']['TaskInfo'] as $k => $v) {
+				if($v['Scope']=='tv_SobeyExchangeProtocal'){
+					foreach($v['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'] as $key => $value){
+						if($value['ItemCode']=='MAMClass'){
+							$a['MAMClass'] = $value['Value'];
+						}elseif($value['ItemCode']=='MAMSecondClass'){
+							$a['MAMSecondClass'] = $value['Value'];
+						}elseif($value['ItemCode']=='Summary'){
+							$a['DescritptionofContent'] = $value['Value'];
+						}elseif($value['ItemCode']=='Keywords'){
+							$a['Keyword'] = $value['Value'];
+						}
+					}
+				}
+			}
+		    $list_array[] = array_merge(array('ClipName' => $this->format_sepcial_chars($vv['PGMNAME']), 'ClipGUID' => $vv['PGMGUID'], 'ClipLength' => $vv['PGMLENGTH'], 'InPoint' => 0, 'OutPoint' => $vv['PGMLENGTH'] * 400000, 'Producer' => $vv['OPERATER'], 'ShowDate' => $submittime, 'PlayChannel' => $channelname, 'ColumnName' => $vv['COLUMNNAME'], 'FilePath' => $this->formatStr($vv['PGMAUDIOPATH']), 'SerialNumber' => $k + 1),$a);
 		    break;
 		}
 	    }
@@ -193,14 +210,40 @@ class Relationship extends AppModel {
 	}
 	$theData = $this->find('first', array('fields' => array('mpcxml'), 'conditions' => array('PGMGUID' => $guid)));
 	$mpcArray = Array2Xml2Array::xml2array($theData['Relationship']['mpcxml']);
+	//echo "<pre/>";
+	//echo count($mpcArray);exit;
+	//print_r($mpcArray['MPC']['Content']);exit;
+	//$ETMultiClips = array();
+	/*foreach($mpcArray['MPC']['Content']['AddTask']['TaskInfo'] as $k => $v) {
+		if($v['Scope']=='tv_SobeyExchangeProtocal'){
+			foreach($v['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'] as $key => $value){
+				if($value['ItemCode']=='MAMClass'){
+					$ETMultiClips['MAMClass'] = $value['Value'];
+				}elseif($value['ItemCode']=='MAMSecondClass'){
+					$ETMultiClips['MAMSecondClass'] = $value['Value'];
+				}elseif($value['ItemCode']=='Summary'){
+					$ETMultiClips['DescritptionofContent'] = $value['Value'];
+				}elseif($value['ItemCode']=='Keywords'){
+					$ETMultiClips['Keyword'] = $value['Value'];
+				}
+			}
+		}
+	}*/
+	//echo "<pre/>";
+	//print_r($ETMultiClips);exit;
+		
 	if ($array) {
-	    $array = array('Scope' => 'ETMultiClips', 'Schema' => '', 'Data' => array('AttributeItem' => $array));
+	    //$array = array('Scope' => array('ETMultiClips' => $ETMultiClips), 'Schema' => '', 'Data' => array('AttributeItem' => $array));
+		$array = array('Scope' => 'ETMultiClips', 'Schema' => '', 'Data' => array('AttributeItem' => $array));
 	    $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][] = $array;
 	}
+	//echo "<pre/>";
+	//print_r($mpcArray);exit;
 	$newMpcDataXml = new Xml($mpcArray, array('format' => 'tags'));
 	$newMpcDataXml->options(array('cdata' => false));
 	//修改后的报文 可以存入mpcxml字段中了
 	$newMpcDataXmlStr = $newMpcDataXml->toString();
+	//echo $newMpcDataXmlStr;exit;
 	$this->updateMpc = $mpcArray;
 	//提交报文
 	$resultState = $this->commitMpc();

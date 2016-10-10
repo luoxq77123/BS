@@ -77,9 +77,9 @@ class AuditTaskUpdateOperation extends Object{
 			$taskIDData = $this->_getTaskIDsWithGroupID();
 			$isFinal = $this->_judgeTaskIsFinal($taskIDData);
 			$mpcState=true;
-			if ($isFinal){		
-				//流程发起处理			
-				$this->mpcOperation->setNewMpc($taskIDData);			
+			if ($isFinal){
+				//流程发起处理
+				$this->mpcOperation->setNewMpc($taskIDData);
 				$commitStateMain = $this->mpcOperation->commitMpc(1);
 				$commitStateSpare = false;
 				if (!$commitStateMain){
@@ -218,7 +218,7 @@ class AuditTaskUpdateOperation extends Object{
 				if (IS_CNTV){
 					if (isset($newKeyAttributeArray['PgmName'])){
 						//add 1104
-						$pgmname= $this->de_format_sepcial_chars($newKeyAttributeArray['PgmName']['Value']);
+						$pgmname= $this->de_format_sepcial_chars($newKeyAttributeArray['PgmName']);
 						$taskInfoData = array_merge($taskInfoData,array('pgmname'=>$this->escapeValue($pgmname)));
 					}
 				}
@@ -575,6 +575,7 @@ class AuditTaskUpdateOperation extends Object{
 
 		$prePlatFormArray = $array['PlatFormInfo'];
 		$preAttributeArray = $array['AttributeItem'];
+
 		//平台信息更新
 		$platFormArray = array();
 		if ($platFormUpdate){
@@ -614,13 +615,6 @@ class AuditTaskUpdateOperation extends Object{
 				}
 				$keyAttributeArray[$currentCode] = $this->format_sepcial_chars($tmpAttribute);
 			}
-			//新增一级分类，二级分类，关键词，内容概要
-            $ItemCodeArr = array('MAMClass','MAMSecondClass','Keywords','Summary');
-            foreach($ItemCodeArr as $ItemCod){
-                if(isset($metaDataUpdate[$ItemCod])){
-                    $keyAttributeArray[$ItemCod] = $metaDataUpdate[$ItemCod];
-                }
-            }		
 		}
 
 		$newKeyAttributeArray = $this->updateLogOperation($metaDataUpdate, $keyAttributeArray);
@@ -715,7 +709,7 @@ class AuditTaskUpdateOperation extends Object{
 	 * sql值特使处理
 	 */
 	private function escapeValue($value = NULL){		
-		return str_replace(array('\\', "\0", "\n", "\r", "'", '"'), array('\\\\', '\\0', '\\n', '\\r', "''", '\\"'), $value); 
+		return str_replace(array('\\', "\0", "\n", "\r", "'", '"'), array('\\\\', '\\0', '\\n', '\\r', "\\'", '\\"'), $value); 
 	}
 	//转义XML特殊字符
 	protected function format_sepcial_chars($str) {

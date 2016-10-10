@@ -16,17 +16,13 @@
                 <th>媒资ID</th>
                 <?php endif; ?>
                 <th style="width:240px;">GUID</th>
-		<th style="width:60px;">平台</th>
             </tr>
         </thead>
         <tbody>
             <?php if($operatelogs):?>
-            <?php 
-				foreach ($operatelogs as $operatelog):
-					if($operatelog['Operatelog']['operatetype'] == 22 || $operatelog['Operatelog']['operatetype'] == 21)continue;
-			?>
+            <?php foreach ($operatelogs as $operatelog):?>
             <tr>
-                <td nowrap="wrap" style="max-width:400px;word-wrap:break-word;overflow:hidden" title="<?php echo $operatelog['Operatelog']['programname']; ?>"><?php echo $this->ViewOperation->subStringFormat($operatelog['Operatelog']['programname'], 20); ?></td>
+                <td nowrap="wrap" style="max-width:400px;word-wrap:break-word;overflow:hidden" title="<?php echo $operatelog['Operatelog']['programname']; ?>"><?php echo $operatelog['Operatelog']['programname']; ?></td>
                 <td><?php echo format_length($operatelog['Operatelog']['pgmlength']); ?></td>
                 <td><?php echo $operatelog['Operatelog']['operatorname']; ?></td>
                 <td><?php echo $operatelog['Operatelog']['operatetime']; ?></td>
@@ -40,15 +36,11 @@
                 <?php endif; ?>
 
                 <td><?php echo $operatelog['Operatelog']['programguid']; ?></td>
-		<td><?php 
-		echo $platform[$operatelog['Operatelog']['systemid']];
-		?>
-		</td>
             </tr>
             <?php endforeach; ?>
             <?php else:?>
             <tr>
-                <td style="text-align:center" colspan="<?php if(!defined("OPERATELOG_SHOW_EX") || OPERATELOG_SHOW_EX) echo '10'; else echo '8'; ?>">没有合适记录</td>
+                <td style="text-align:center" colspan="<?php if(!defined("OPERATELOG_SHOW_EX") || OPERATELOG_SHOW_EX) echo '9'; else echo '7'; ?>">没有合适记录</td>
             </tr>
             <?php endif; ?>
         </tbody>
@@ -66,4 +58,3 @@
         </div>
     </div>
 </div>
-<?php // echo $this->element('sql_dump'); ?>

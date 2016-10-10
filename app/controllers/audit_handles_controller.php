@@ -25,6 +25,12 @@ class AuditHandlesController extends AppAuditsController {
 	if (!in_array($theTaskLevel, $this->userTaskLevel)) {
 	    $this->Session->setFlash('您好，该任务已审核！', false);
 	} else {
+	
+		$mcpXmlArr['MAMClass'] = $post['MAMClass'];
+        $mcpXmlArr['MAMSecondClass'] = $post['MAMSecondClass'];
+        $mcpXmlArr['Keywords'] = $post['Keywords'];
+        $mcpXmlArr['Summary'] = $post['Summary'];
+	
 	    //获取提交taskInfo
 	    $theNote = $post['ContentAuditNote'];
 	    $state = (int) $post['State'];
@@ -44,17 +50,37 @@ class AuditHandlesController extends AppAuditsController {
 	    $updateMetaString = $post['UpdateMetaData'];
 	    $updataMetaData = (array) json_decode($updateMetaString);
 
-	    $taskInfoParamArray = array('Request' => array(
-		    'TaskInfo' => $taskInfo,
-		    'PlatFormUpdate' => $platFormUpdate,
-		    'MetaDataUpdate' => $updataMetaData));
+		
+		$ItemCodeArr = array('MAMClass','MAMSecondClass','Keywords','Summary');
+            $ItemNameArr = array('MAMClass'=>'一级分类','MAMSecondClass'=>'二级分类','Keywords'=>'关键词','Summary'=>'内容概要');
+
+            $MetaDataArr = array();
+            foreach ($ItemCodeArr as $val) {
+                $MetaDataArr[$val] = array(
+				'ItemCode' => $val,
+				'ItemName' => $ItemNameArr[$val],  
+                'Value' => $mcpXmlArr[$val],
+                );
+            }
+
+            $taskInfoParamArray = array('Request' =>
+                array(
+                    'TaskInfo' => $taskInfo,
+                    'PlatFormUpdate' => $platFormUpdate,
+                    'MetaDataUpdate' => array_merge($updataMetaData,$MetaDataArr)
+                )
+            );
+	  
+		$guid = $taskInfop['pgmguid'];
+        $this->update_Mpcxml($guid,$mcpXmlArr);
+			
 	    $taskInfoParam = $this->_toXmlStr($taskInfoParamArray);
-
-	    $result = $this->clientSoap->updateTask($taskInfoParam);
-
+	    $result = $this->clientSoap->updateTask($taskInfoParam);	
 	    $reArray = $this->XmlArray->xml2array($result);
 	    $respCode = $reArray['Response']['RespCode'];
 	    if ($respCode == DATA_SUCCESS) {
+		
+		
 		if ($state == PASS_AUDIT_TASK_STATE) {
 		    //cntv 关联入库需要
 		    if (IS_CNTV) {
@@ -62,6 +88,7 @@ class AuditHandlesController extends AppAuditsController {
 			//add 1030 这里用来判断是否对原标题进行了修改，如果进行了修改就要同事更新关联库里面的标题和XML
 			$update_title = (isset($updataMetaData['PgmName']) && $updataMetaData['PgmName']) ? $updataMetaData['PgmName'] : false;
 			$this->relationshipUpdate($guid, $update_title);
+			//$this->update_Mpcxml($guid,$mcpXmlArr);
 		    }
 		    echo '通过任务成功';
 		} elseif ($state == RETURN_AUDIT_TASK_STATE) {
@@ -73,6 +100,7 @@ class AuditHandlesController extends AppAuditsController {
 			$update_title = (isset($updataMetaData['PgmName']) && $updataMetaData['PgmName']) ? $updataMetaData['PgmName'] : false;
 			if ($update_title) {
 			    $this->only_save_rel_update($guid, $update_title);
+				//$this->update_Mpcxml($guid,$mcpXmlArr);
 			}
 		    }
 		    echo '保存任务成功';
@@ -167,8 +195,7 @@ class AuditHandlesController extends AppAuditsController {
 	    $sql = "update ET_NM_CNTVPGMREL set OPERATESTATE = 0 where OPERATESTATE = 10 and PGMGUID = '" . $guid . "' and PGMTYPE = 1";
 	}
 	//更新关联库中的报文，新加ContentCensor节点
-	$relUpdateSql = $this->Content->query($sql);
-	$this->log('sql:' . $sql . '|' . 'result:' . $relUpdateSql, 'relupdatesql');
+	$this->Content->query($sql);
 //	$this->log($guid);
 	$this->update_xml($guid, $update_title);
     }
@@ -194,9 +221,6 @@ class AuditHandlesController extends AppAuditsController {
 	}
 
 	$theData = $this->Relationship->find('first', array('fields' => array('mpcxml'), 'conditions' => array('PGMGUID' => $guid)));
-	if( !$theData ) {
-		$this->log($guid . '|没有找到数据', 'commit');
-	}
 	$mpcArray = Array2Xml2Array::xml2array($theData['Relationship']['mpcxml']);
 	$add_array = array('ItemCode' => 'ContentCensor', 'Value' => $this->userName, 'ItemName' => '审核人');
 	//在报文中找到节点scope值为tv_SobeyExchangeProtocal的节点
@@ -217,7 +241,8 @@ class AuditHandlesController extends AppAuditsController {
 	    foreach ($mpcArray['MPC']['Content']['AddTask']['TaskInfo'] as $k => $v) {
 		if ($v['Scope'] === 'DocumentInfo') {
 		    $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['PGMNAME'] = $this->format_sepcial_chars($update_title);
-		    $documentInfo_update = true;
+		    $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['CNTVInfo']['PgmCategory'] = "123";
+			$documentInfo_update = true;
 		}
 		if ($v['Scope'] === 'tv_SobeyExchangeProtocal') {
 		    $EntityData_attr = &$mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'];
@@ -245,6 +270,69 @@ class AuditHandlesController extends AppAuditsController {
 	$reMpcData = $this->Relationship->newSetBlob($sqlStr, $newMpcDataXmlStr);
 //	$this->log($reMpcData);
     }
+	
+	/**
+     * 修改MPCxml 中一级分类 二级分类 内容概要 关键词
+     * @param string $guid
+     * @param array  $data
+     */
+    public function update_Mpcxml($guid, $data)
+    {
+        if (!$guid) {
+            $this->log('audit_handles_controller:MPC报文处理：节目为空');
+            return false;
+        }
+        $ItemNameArr = array(
+            'MAMClass'=>'',
+            'MAMSecondClass'=>'',
+            'Keywords'=>'',
+            'Summary'=>''
+        );
+        $theData = $this->Relationship->find('first', array('fields' => array('mpcxml'), 'conditions' => array('PGMGUID' => $guid)));
+        if (!$theData) {
+            $this->log($guid . '|没有找到数据', 'commit');
+        }
+        $mpcArray = Array2Xml2Array::xml2array($theData['Relationship']['mpcxml']);
+        $add_array = array(
+            'ItemCode' => 'ContentCensor',
+            'Value' => $this->userName,
+            'ItemName' => '审核人'
+        );
+        //在报文中找到节点scope值为tv_SobeyExchangeProtocal的节点
+        foreach ($mpcArray['MPC']['Content']['AddTask']['TaskInfo'] as $k => $v) {
+		if ($v['Scope'] === 'DocumentInfo') {
+                $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['CNTVInfo']['PgmCategory'] = $data['MAMClass'];
+                $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['CNTVInfo']['PgmSndClass'] =$data['MAMSecondClass'] ;
+                $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['CNTVInfo']['Keyword'] = $data['Keywords'];
+                $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['DocumentInfo']['CNTVInfo']['Dsc'] = $data['Summary'];
+            }
+		
+            if ($v['Scope'] === 'tv_SobeyExchangeProtocal') {
+                $arr = $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'];
+             
+                foreach($arr as $val){
+                	if(isset($data[$val["ItemCode"]]))
+                	{
+                		$val["Value"] = $data[$val['ItemCode']];
+                	}
+                	$brr[]= $val;
+                }
+                $mpcArray['MPC']['Content']['AddTask']['TaskInfo'][$k]['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'] =  $brr;
+                break;
+            }
+        }
+
+        $newMpcDataXml = new Xml($mpcArray, array('format' => 'tags'));
+        $newMpcDataXml->options(array('cdata' => false));
+        //修改后的报文 可以存入mpcxml字段中了
+        $newMpcDataXmlStr = $newMpcDataXml->toString();
+        //更新对应Mpc数据
+        $blobStyle = ':data';
+        $sqlStr = "update ET_NM_CNTVPGMREL t set MPCXML=" . $blobStyle . " where t.PGMGUID='" . $guid . "'";
+        $reMpcData = $this->Relationship->newSetBlob($sqlStr, $newMpcDataXmlStr);
+        //$this->log($reMpcData);
+    }
+
 
     /**
      * sql值特使处理

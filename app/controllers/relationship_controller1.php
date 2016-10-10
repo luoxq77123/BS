@@ -190,7 +190,7 @@ class RelationshipController extends AppController {
 	//获取当前粗编信息
 	$relationship_info = $this->is_validate($guid);
 	//状态改变
-	$sql_update_status = "update ET_NM_CNTVPGMREL set OPERATESTATE = 1 where PGMGUID ='" . $guid . "'";
+	$sql_update_status = "update ET_NM_CNTVPGMREL set OPERATESTATE = 1 where PGMGUID ='" . $guid . "' and OPERATESTATE = 0";
 	$this->Relationship->newSetData($sql_update_status);
 	//获取频道
 	$channel_list = $this->Relationship->GetChannel();
@@ -205,8 +205,12 @@ class RelationshipController extends AppController {
 	    $findingArr['post_keyword'] = array_merge($findingArr['post_keyword'], $sql_condition['find_array']);
 	}
 	$now = date('Y-m-d H:i:s', time());
-	//关联操作
+	
 	if (isset($this->params['data']['submit_type']) && $this->params['data']['submit_type'] === '1') {
+	    //add 20140110 fix 一个人正在关联，另外一个人解锁再关联一次
+	    if($relationship_info[0]['OPERATESTATE'] == 2) {
+		$this->redirect(array('action' => 'index?result_status=' . urlencode('该节目已被其他编辑关联完成')));
+	    }
 	    $ids = array();
 	    if (isset($post['id']))
 		$ids = array_keys($post['id']);
@@ -231,7 +235,6 @@ class RelationshipController extends AppController {
 		    $ids_sql_update = "update ET_NM_CNTVPGMREL set OPERATESTATE = 2 where PGMGUID ='" . $v . "'";
 		    $this->Relationship->newSetData($ids_sql_update);
 		}
-
 		//写日志
 		$this->Relationship->AddLog($array);
 //              修改该粗编节目的状态
@@ -241,9 +244,11 @@ class RelationshipController extends AppController {
 		$blobStyle = DbHandle::_getDbSetBlobStyle();
 		$sqlStr = "update ET_NM_CNTVPGMREL t set MPCXML=" . $blobStyle . " where t.PGMGUID='" . $guid . "'";
 		$reMpcData = $this->Relationship->newSetBlob($sqlStr, $result);
-		$this->redirect(array('action' => 'index?result_status=' . urlencode('关联成功')));
+		$this->Session->setFlash('关联成功',false);
+		$this->redirect(array('action' => 'index','begintime'=>date('Y-m-d H:i:s', time() - 60 * 60 * 24),'endtime'=> date('Y-m-d H:i:s')));
 	    } else {
-		$this->redirect(array('action' => 'index?result_status=' . urlencode('关联失败')));
+		$this->Session->setFlash('关联失败',false);
+		$this->redirect(array('action' => 'index','begintime'=>date('Y-m-d H:i:s', time() - 60 * 60 * 24),'endtime'=> date('Y-m-d H:i:s')));
 	    }
 	}
 	$now_begin = date('Y-m-d H:i:s', time() - 60 * 60 * 24);

@@ -141,11 +141,13 @@ class AppAuditsController extends AppController{
 		$attributes = array();
 
 		$metaParamArray = array('Request'=>array('TaskID'=>$taskID,'CurrentPage'=>$page,'PageSize'=>META_LIST_SIZE));
+		
 		$metaParam = $this->_toXmlStr($metaParamArray);
 
 		$metaData= $this->clientSoap->getMetaDataList($metaParam);
 
 		$array = $this->XmlArray->xml2array($metaData);
+		
 		if ($array){
 			$platFormInfos = $array['Response']['PlatFormInfo'];
 			$platFormInfos = $this->_toNumericArray($platFormInfos);

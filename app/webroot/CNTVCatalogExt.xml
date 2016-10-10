@@ -1,0 +1,33 @@
+﻿<CatalogExt>
+	<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="新闻">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>综合,时政,国际,国内,财经,社会,农业,军事,法治,科技,体育,娱乐,台湾,港澳,其他</Value>
+	</Catalog>
+	<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="经济">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>宏观,国际,证券,消费,公司,房产,产业,评论,理财,生活,饰家,人物,收藏</Value>
+	</Catalog>
+	<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="综艺">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>明星,综艺,影视,竞猜,舞蹈,相声,小品,曲艺,戏剧,交友,竞技,职场,周边,游戏,音乐,其他</Value>
+	</Catalog>
+	<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="生活">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>饮食,时尚,购物,居家,旅游,伦理,健康,女性,理财,宠物,情感,汽车,竞赛,公益,其他</Value>
+	</Catalog>
+	<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="科教">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>人物,历史,自然,科技,文化,军事,社会,经济</Value>
+	</Catalog>
+<Catalog ItemCode="PgmCategory" ItemName="一级分类" Value="青少">
+		<ItemCode>PgmSndClass</ItemCode>
+		<ItemName>二级分类</ItemName>
+		<Value>栏目,大赛,特别节目,晚会,儿童剧,少儿百科,电影,动画片,少儿歌舞,教育,幼儿,小学,中学,活动</Value>
+	</Catalog>
+        
+</CatalogExt>

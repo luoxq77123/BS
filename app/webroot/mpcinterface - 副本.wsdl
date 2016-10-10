@@ -33,7 +33,7 @@
   <WSDL:service name="mpcinterface">
     <documentation>gSOAP 2.8.0 generated service definition</documentation>
     <WSDL:port name="mpcinterface" binding="tns:mpcinterface">
-      <SOAP:address location="http://192.168.209.4:8088" />
+      <SOAP:address location="http://192.168.10.249:8088" />
     </WSDL:port>
   </WSDL:service>
 </WSDL:definitions>

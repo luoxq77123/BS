@@ -28,125 +28,115 @@ class RelationshipController extends AppController {
 	}
     }
 
-    public function index()
-    {
-        $post = $_POST;
-        $findingArr = array();
-        $defaultArr = array(
-            'channelname' => '',
-            'begintime' => '',
-            'columnname' => '',
-            'endtime' => '',
-            'PgmName' => '',
-            'pgmtype' => '',
-            'operater' => '',
-            'operatestate' => ''
-        );
+    public function index() {
+	$post = $_POST;
+	$findingArr = array();
+	$defaultArr = array('channelname' => '', 'begintime' => '', 'columnname' => '', 'endtime' => '', 'PgmName' => '', 'pgmtype' => '', 'operater' => '', 'operatestate' => '');
 
-        //获取频道
-        $channel_list = $this->Relationship->GetChannel();
-        $findingArr['channel_list'] = $channel_list;
-        //分页相关
-        $page = isset($this->params['named']['page']) ? (integer)$this->params['named']['page'] : 1;
-        $limit = THE_LIST_SIZE;
-        $operatestate = '1 = 1';
-        //	$sql = "select ET_NM_CNTVPGMREL.*,rownum rn from ET_NM_CNTVPGMREL  where " . $operatestate . " and rownum<=" . $page * $limit;
-        $sql_count = "select * from ET_NM_CNTVPGMREL  where " . $operatestate;
-        $sql_condition = $this->get_where($operatestate, $sql_count);
-        $sql = "select * from (select t.*,rownum rn from (select * from ET_NM_CNTVPGMREL  where " . $sql_condition['sql'] . ") t) where rn between " . ((($page - 1) * $limit) + 1) . " and " . $page * $limit;
-        $findingArr['post_keyword'] = array_merge($defaultArr, $sql_condition['find_array']);
-        $findingArr['PgmName'] = $findingArr['post_keyword']['PgmName'];
-        $relationship_list = $this->Relationship->GetList($sql);
-        $allCount = count($this->Relationship->GetList($sql_condition['sql_count']));
-        $pageCount = intval(ceil($allCount / $limit));
-        $defaults = array('limit' => $limit, 'page' => 1);
-        $options = array_merge(array('page' => 1, 'limit' => 12), $defaults, array('page' => $page));
-        $paging = array(
-            'page' => $page,
-            'current' => $limit,
-            'count' => $allCount,
-            'prevPage' => ($page > 1),
-            'nextPage' => ($allCount > ($page * $limit)),
-            'pageCount' => $pageCount,
-            'defaults' => array_merge(array('limit' => 1, 'step' => 1), $defaults),
-            'options' => $options
-        );
-        $layoutParams = array('layoutMode' => LAYOUT_MODE_ALL, 'model' => '', 'page' => $page);
-        //权限检查是否显示解锁图标
-        $unlock = (bool)$this->Relationship->role_validate($this->userID);
-        //MLY.cp 判断需要
-        $relationship = true;
-        $this->params['paging']['Relationship'] = $paging;
-        $this->set(compact('layoutParams', 'findingArr', 'selectedList', 'pgmAuditList', 'relationship', 'relationship_list', 'unlock'));
-        $this->render('index');
+	//获取频道
+	$channel_list = $this->Relationship->GetChannel();
+	$findingArr['channel_list'] = $channel_list;
+	//分页相关
+	$page = isset($this->params['named']['page']) ? (integer) $this->params['named']['page'] : 1;
+	$limit = THE_LIST_SIZE;
+	$operatestate = '1 = 1';
+//	$sql = "select ET_NM_CNTVPGMREL.*,rownum rn from ET_NM_CNTVPGMREL  where " . $operatestate . " and rownum<=" . $page * $limit;
+	$sql_count = "select * from ET_NM_CNTVPGMREL  where " . $operatestate;
+	$sql_condition = $this->get_where($operatestate, $sql_count);
+	$sql = "select * from (select t.*,rownum rn from (select * from ET_NM_CNTVPGMREL  where " . $sql_condition['sql'] . ") t) where rn between " . ((($page - 1) * $limit) + 1) . " and " . $page * $limit;
+	$findingArr['post_keyword'] = array_merge($defaultArr, $sql_condition['find_array']);
+	$findingArr['PgmName'] = $findingArr['post_keyword']['PgmName'];
+	$relationship_list = $this->Relationship->GetList($sql);
+	$allCount = count($this->Relationship->GetList($sql_condition['sql_count']));
+	$pageCount = intval(ceil($allCount / $limit));
+	$defaults = array('limit' => $limit, 'page' => 1);
+	$options = array_merge(array('page' => 1, 'limit' => 12), $defaults, array('page' => $page));
+	$paging = array(
+	    'page' => $page,
+	    'current' => $limit,
+	    'count' => $allCount,
+	    'prevPage' => ($page > 1),
+	    'nextPage' => ($allCount > ($page * $limit)),
+	    'pageCount' => $pageCount,
+	    'defaults' => array_merge(array('limit' => 1, 'step' => 1), $defaults),
+	    'options' => $options
+	);
+	$layoutParams = array('layoutMode' => LAYOUT_MODE_ALL, 'model' => '', 'page' => $page);
+	//权限检查是否显示解锁图标
+	$unlock = (bool) $this->Relationship->role_validate($this->userID);
+	//MLY.cp 判断需要
+	$relationship = true;
+	$this->params['paging']['Relationship'] = $paging;
+	$this->set(compact('layoutParams', 'findingArr', 'selectedList', 'pgmAuditList', 'relationship', 'relationship_list', 'unlock'));
+	$this->render('index');
     }
 
     protected function get_where($sql, $sql_count = '') {
-        $params = $this->params;
-        //节目名称
-        $pgmname = isset($params['data']['PgmName']) ? $params['data']['PgmName'] : (isset($params['named']['PgmName']) ? $params['named']['PgmName'] : '');
-        //频道名称
-        $channelname = isset($params['data']['channelname']) ? $params['data']['channelname'] : (isset($params['named']['channelname']) ? $params['named']['channelname'] : '');
-        //栏目名称
-        $columnname = isset($params['data']['columnname']) ? $params['data']['columnname'] : (isset($params['named']['columnname']) ? $params['named']['columnname'] : '');
+	$params = $this->params;
+	//节目名称
+	$pgmname = isset($params['data']['PgmName']) ? $params['data']['PgmName'] : (isset($params['named']['PgmName']) ? $params['named']['PgmName'] : '');
+	//频道名称
+	$channelname = isset($params['data']['channelname']) ? $params['data']['channelname'] : (isset($params['named']['channelname']) ? $params['named']['channelname'] : '');
+	//栏目名称 
+	$columnname = isset($params['data']['columnname']) ? $params['data']['columnname'] : (isset($params['named']['columnname']) ? $params['named']['columnname'] : '');
 
-        $begintime = isset($params['data']['begintime']) ? $params['data']['begintime'] : (isset($params['named']['begintime']) ? $params['named']['begintime'] : '');
+	$begintime = isset($params['data']['begintime']) ? $params['data']['begintime'] : (isset($params['named']['begintime']) ? $params['named']['begintime'] : '');
 
-        $endtime = isset($params['data']['endtime']) ? $params['data']['endtime'] : (isset($params['named']['endtime']) ? $params['named']['endtime'] : '');
-        //节目类型
-        $pgmtype = isset($params['data']['pgmtype']) ? $params['data']['pgmtype'] : (isset($params['named']['pgmtype']) ? $params['named']['pgmtype'] : 1);
-        //编辑人员
-        $operater = isset($params['data']['operater']) ? $params['data']['operater'] : (isset($params['named']['operater']) ? $params['named']['operater'] : '');
-        //节目状态
-        $operatestate = isset($params['named']['operatestate']) ? $params['named']['operatestate'] : '!=10';
+	$endtime = isset($params['data']['endtime']) ? $params['data']['endtime'] : (isset($params['named']['endtime']) ? $params['named']['endtime'] : '');
+	//节目类型
+	$pgmtype = isset($params['data']['pgmtype']) ? $params['data']['pgmtype'] : (isset($params['named']['pgmtype']) ? $params['named']['pgmtype'] : 1);
+	//编辑人员
+	$operater = isset($params['data']['operater']) ? $params['data']['operater'] : (isset($params['named']['operater']) ? $params['named']['operater'] : '');
+	//节目状态
+	$operatestate = isset($params['named']['operatestate']) ? $params['named']['operatestate'] : '!=10';
 
-        if ($pgmname && $pgmname !== '请输入节目名称') {
-            $sql = $sql . " and PGMNAME LIKE '%" . trim($pgmname) . "%'";
-            $sql_count = $sql_count . " and PGMNAME LIKE '%" . trim($pgmname) . "%'";
-            $find_array['PgmName'] = $pgmname;
-        }
-        if ($channelname) {
-            $sql = $sql . " and CHANNELNAME = '" . $channelname . "'";
-            $sql_count = $sql_count . " and CHANNELNAME = '" . $channelname . "'";
-            $find_array['channelname'] = $channelname;
-        }
-        if ($columnname) {
-            $sql = $sql . " and COLUMNNAME = '" . $columnname . "'";
-            $sql_count = $sql_count . " and COLUMNNAME = '" . $columnname . "'";
-            $find_array['columnname'] = $columnname;
-        }
-        if ($begintime) {
-            $h_m_s = (strlen($begintime) > 10) ? '' : '00:00:00';
-            $sql = $sql . " and PGMSUBMITTIME >= to_timestamp('" . $begintime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
-            $sql_count = $sql_count . " and PGMSUBMITTIME >= to_timestamp('" . $begintime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
-            $find_array['begintime'] = $begintime;
-        }
-        if ($endtime) {
-            $h_m_s = (strlen($endtime) > 10) ? '' : '23:59:59';
-            $sql = $sql . " and PGMSUBMITTIME <= to_timestamp('" . $endtime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
-            $sql_count = $sql_count . " and PGMSUBMITTIME <= to_timestamp('" . $endtime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
-            $find_array['endtime'] = $endtime;
-        }
-        if ($pgmtype || $pgmtype == '0') {
-            $sql = $sql . " and PGMTYPE = '" . $pgmtype . "'";
-            $sql_count = $sql_count . " and PGMTYPE = '" . $pgmtype . "'";
-            $find_array['pgmtype'] = $pgmtype;
-        }
-        if ($operater) {
-            $sql = $sql . " and OPERATER = '" . $operater . "'";
-            $sql_count = $sql_count . " and OPERATER = '" . $operater . "'";
-            $find_array['operater'] = $operater;
-        }
-        if (($operatestate || $operatestate == '0') && $operatestate !== '!=10') {
-            $sql = $sql . " and OPERATESTATE = '" . $operatestate . "'";
-            $sql_count = $sql_count . " and OPERATESTATE = '" . $operatestate . "'";
-            $find_array['operatestate'] = $operatestate;
-        }
-        if ($operatestate === '!=10') {
-            $sql = $sql . " and OPERATESTATE " . $operatestate . "";
-            $sql_count = $sql_count . " and OPERATESTATE " . $operatestate . "";
-        }
-        return array('sql' => $sql . self::order, 'sql_count' => $sql_count, 'find_array' => $find_array);
+	if ($pgmname && $pgmname !== '请输入节目名称') {
+	    $sql = $sql . " and PGMNAME LIKE '%" . trim($pgmname) . "%'";
+	    $sql_count = $sql_count . " and PGMNAME LIKE '%" . trim($pgmname) . "%'";
+	    $find_array['PgmName'] = $pgmname;
+	}
+	if ($channelname) {
+	    $sql = $sql . " and CHANNELNAME = '" . $channelname . "'";
+	    $sql_count = $sql_count . " and CHANNELNAME = '" . $channelname . "'";
+	    $find_array['channelname'] = $channelname;
+	}
+	if ($columnname) {
+	    $sql = $sql . " and COLUMNNAME = '" . $columnname . "'";
+	    $sql_count = $sql_count . " and COLUMNNAME = '" . $columnname . "'";
+	    $find_array['columnname'] = $columnname;
+	}
+	if ($begintime) {
+	    $h_m_s = (strlen($begintime) > 10) ? '' : '00:00:00';
+	    $sql = $sql . " and PGMSUBMITTIME >= to_timestamp('" . $begintime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
+	    $sql_count = $sql_count . " and PGMSUBMITTIME >= to_timestamp('" . $begintime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
+	    $find_array['begintime'] = $begintime;
+	}
+	if ($endtime) {
+	    $h_m_s = (strlen($endtime) > 10) ? '' : '23:59:59';
+	    $sql = $sql . " and PGMSUBMITTIME <= to_timestamp('" . $endtime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
+	    $sql_count = $sql_count . " and PGMSUBMITTIME <= to_timestamp('" . $endtime . " " . $h_m_s . "','yyyy-mm-dd hh24:mi:ss')";
+	    $find_array['endtime'] = $endtime;
+	}
+	if ($pgmtype || $pgmtype == '0') {
+	    $sql = $sql . " and PGMTYPE = '" . $pgmtype . "'";
+	    $sql_count = $sql_count . " and PGMTYPE = '" . $pgmtype . "'";
+	    $find_array['pgmtype'] = $pgmtype;
+	}
+	if ($operater) {
+	    $sql = $sql . " and OPERATER = '" . $operater . "'";
+	    $sql_count = $sql_count . " and OPERATER = '" . $operater . "'";
+	    $find_array['operater'] = $operater;
+	}
+	if (($operatestate || $operatestate == '0') && $operatestate !== '!=10') {
+	    $sql = $sql . " and OPERATESTATE = '" . $operatestate . "'";
+	    $sql_count = $sql_count . " and OPERATESTATE = '" . $operatestate . "'";
+	    $find_array['operatestate'] = $operatestate;
+	}
+	if ($operatestate === '!=10') {
+	    $sql = $sql . " and OPERATESTATE " . $operatestate . "";
+	    $sql_count = $sql_count . " and OPERATESTATE " . $operatestate . "";
+	}
+	return array('sql' => $sql . self::order, 'sql_count' => $sql_count, 'find_array' => $find_array);
     }
 
     /*

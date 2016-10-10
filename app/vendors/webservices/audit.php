@@ -108,7 +108,7 @@ class Audit extends AuditCommon {
 	    $respCode = USER_PARAMS_ERROR;
 	    $respDesc = '参数错误';
 	}
-	//$userColumn = $this->assoc_unique($userColumn, 'COLUMN_ID');
+	$userColumn = $this->assoc_unique($userColumn, 'COLUMN_ID');
 //进行结果反馈
 	$returnArray = array('RespCode' => $respCode, 'RespDesc' => $respDesc, 'Columns' => $userColumn);
 	return $this->_returnData($returnArray);
@@ -737,7 +737,7 @@ class Audit extends AuditCommon {
 	$returnValue = array('RespCode' => $respCode, 'RespDesc' => $respDesc, 'Paging' => $paging, 'CountData' => $countData);
 	return $this->_returnData($returnValue);
     }
-/*
+
     function assoc_unique($arr, $key) {
 	$rAr = array();
 	for ($i = 0; $i < count($arr); $i++) {
@@ -747,5 +747,5 @@ class Audit extends AuditCommon {
 	}
 	return array_values($rAr);
     }
-*/
+
 }

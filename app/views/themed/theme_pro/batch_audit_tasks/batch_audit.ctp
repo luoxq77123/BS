@@ -23,7 +23,14 @@ $theTaskID = (int) $taskInfo['taskid'];
 	    return $str;
 	}
 ?>
+
+<style>
+.liShowL{display:block;background:while;margin:0px;padding:0px;}
+.liHideL{display:none;}
+</style>
+
 <?php if ($listTaskInfo): ?>
+
     <div class="imgScroll" style="height:130px;">
         <div class="t_scrollbox" id="horizontal" style="margin-left:40px;margin-right:40px;">
     	<div class="t_slyWrap" style="width:1200px;">	
@@ -177,15 +184,14 @@ $theTaskID = (int) $taskInfo['taskid'];
 		<select name="" onchange="changeFilealias(this.value,<?php echo $theTaskID; ?>)">
 		    <?php
 		    if ($fileAlias):
-			foreach ($fileAlias as $tempFileAlias) :
-			    if ($tempFileAlias == $selectFileAlias) :
-				?>
-	    		    <option value= "<?php echo $tempFileAlias; ?>" selected="selected"><?php echo $tempFileAlias; ?></option>
-			    <?php else : ?>	
-	    		    <option value= "<?php echo $tempFileAlias; ?>"><?php echo $tempFileAlias; ?></option>
-			    <?php
-			    endif;
-			endforeach;
+				foreach ($fileAlias as $tempFileAlias) :
+					if ($tempFileAlias == $selectFileAlias) : ?>
+						<option value= "<?php echo $tempFileAlias; ?>" selected="selected"><?php echo $tempFileAlias; ?></option>
+					<?php else : ?>	
+						<option value= "<?php echo $tempFileAlias; ?>"><?php echo $tempFileAlias; ?></option>
+					<?php
+					endif;
+				endforeach;
 		    endif;
 		    ?>	
 		</select>
@@ -193,20 +199,90 @@ $theTaskID = (int) $taskInfo['taskid'];
 		<span><?php echo $this->ViewOperation->subStringFormat(escapeValue($taskInfo['pgmname']), AUDIT_NAME_NUM); ?></span>
 	    </div>
 	    <div class="play" id="play_div">
-		<object classid="clsid:F7944BBA-9B19-44EF-B428-17D527982A2D" type="application/x-itst-activex" style="border:0px;width:590px;height:465px;" id="EncoderPlayer">
-		</object>
+			<object classid="clsid:F7944BBA-9B19-44EF-B428-17D527982A2D" type="application/x-itst-activex" style="border:0px;width:590px;height:465px;" id="EncoderPlayer"></object>
 	    </div>
 	</div>
-	<div class="shleftbottom">
-	    <h3 class="title">审核意见</h3>
-	    <textarea name="" id="ContentAuditNote"><?php echo $taskInfo['contentauditnote']; ?></textarea>
-	    <div class="bt">
-		<input id="tg_commit" type="submit" value="通过" onclick="commit(1,<?php echo $theTaskID; ?>)"/>
-		<input id="th_commit" type="submit" value="退回" onclick="commit(2,<?php echo $theTaskID; ?>)"/>
-		<input id="bc_commit" type="submit" value="保存" onclick="commit(4,<?php echo $theTaskID; ?>)"/>
-		<input id="qx_commit" type="submit" value="取消" onclick="onUpdateState(1)"/>
-	    </div>
+	
+	<?php
+		$editAttributes = Configure::read('editedAttributes');				
+		$timeAttributes = Configure::read('timeAttributes');
+		$textAttributes = Configure::read('textAttributes');	
+		foreach($attributes as $attribute){
+            $dataArr[$attribute['ItemName']] =$attribute;
+        }
+	?>
+	
+	<div class="shleftbottom" style="height: 30px; margin-top: 3px;">
+		<h3 class="title">
+			<?php if ($layoutParams['userType'] != TECH_TASK_TYPE): ?>
+    		    <ul class="of">
+					<?php if ($platFormInfos): ?>
+						<?php foreach ($platFormInfos as $platFormInfo) : ?>
+							<?php
+							$isSelected = (int) $platFormInfo['IsSelected'];
+							if ($isSelected == IS_SELECTED) : ?>
+								<li>
+									<input type="checkbox" checked ="checked" id="<?php echo $platFormInfo['PlatFormID']; ?>" name="plat" value="<?php echo $platFormInfo['PlatFormName']; ?>"/>
+									<?php echo $platFormInfo['PlatFormName']; ?>
+								</li>
+							<?php else : ?>
+								<li>
+									<input type="checkbox" id="<?php echo $platFormInfo['PlatFormID']; ?>" name="plat" value="<?php echo $platFormInfo['PlatFormName']; ?>"/>
+									<?php echo $platFormInfo['PlatFormName']; ?>
+								</li>
+							<?php endif; ?>
+						<?php endforeach; ?>
+					<?php endif; ?>
+    		    </ul>
+			<?php endif; ?>
+		</h3>      
 	</div>
+	<div class="shright" style="width:612px;margin-left:1px;margin-top:0;">
+		<div class="tabbottom" style="height:350px;margin:0px;">
+			<div class="jmy" style="height:300px;">
+				<div id="meta">
+					<?php if ($attributes): ?>
+						<table cellpadding="0" cellspacing="0" class="xiangxitable" style="height:300px;">		
+							<tr>
+								<td style="width:80px;">节目名称:</td>
+								<td style="height:50px;" class="nrms_cont" id="<?php echo $dataArr['节目名称']['ItemCode']; ?>">
+									<div><?php echo $dataArr['节目名称']['Value']; ?></div>
+								</td>
+							</tr>
+							<tr>
+								<td>栏目名称:</td>
+								<td style="height:50px;">
+									<div><?php echo $dataArr['栏目名称']['Value']; ?></div>
+								</td>
+							</tr>
+							<tr>
+								<td>频道名称:</td>
+								<td style="height:50px;">
+									<div><?php echo $dataArr['频道名称']['Value']; ?></div>
+								</td>
+							</tr>               
+							<tr>
+								<td>节目长度：</td>
+								<td style="height:50px;">
+									<?php
+										$length = (int) $dataArr['节目长度']['Value'];
+										echo $this->ViewOperation->formatTimeLength($length);
+									?>
+								</td>
+							</tr>
+							<tr>
+								<td>提交用户:</td>
+								<td  style="height:50px;">
+									<div><?php echo $dataArr['提交用户']['Value']; ?></div>
+								</td>
+							</tr>
+						</table>		
+					<?php endif;?>
+				</div>
+			</div>
+		</div>
+	</div>
+	
     </div>
     <div class="shright">
 	<div class="tabtop">
@@ -215,68 +291,64 @@ $theTaskID = (int) $taskInfo['taskid'];
 		<li id="js_jm" style="display:none;">技审结果</li>
 	    </ul>
 	</div>
-	<div class="tabbottom">
+	<div class="tabbottom" style="height: 507px;">
 	    <!-- 开始--元数据-->
-	    <div class="jmy" id="ysj_jmn" style="display:none;">
-		<?php echo $this->Html->image('fbpt.png', array('alt' => '', 'class' => 'fbpt')) ?>	
+	    <div class="jmy" id="ysj_jmn" style="display:none;height:853px;">
 		<div id="meta">
-		    <?php if ($layoutParams['userType'] != TECH_TASK_TYPE): ?>
-    		    <ul class="of">
-			    <?php if ($platFormInfos): 
-				?>
-				<?php foreach ($platFormInfos as $platFormInfo) : ?>
-				    <?php
-				    $isSelected = (int) $platFormInfo['IsSelected'];
-				    if ($isSelected == IS_SELECTED) :
-					?>
-					<li>
-					    <input type="checkbox" checked ="checked" id="<?php echo $platFormInfo['PlatFormID']; ?>" name="plat" value="<?php echo $platFormInfo['PlatFormName']; ?>"/>
-					    <?php echo $platFormInfo['PlatFormName']; ?>
-					</li>
-				    <?php else : ?>
-					<li>
-					    <input type="checkbox" id="<?php echo $platFormInfo['PlatFormID']; ?>" name="plat" value="<?php echo $platFormInfo['PlatFormName']; ?>"/>
-					    <?php echo $platFormInfo['PlatFormName']; ?>
-					</li>
-				    <?php endif; ?>
-				<?php endforeach; ?>
-			    <?php endif; ?>
-    		    </ul>
+		    <?php if ($layoutParams['userType'] != TECH_TASK_TYPE): ?>    		   
 			<?php if ($attributes): ?>
-			    <table cellpadding="0" cellspacing="0" class="xiangxitable">
-				<?php
-				$editAttributes = Configure::read('editedAttributes');
-				$timeAttributes = Configure::read('timeAttributes');
-				$textAttributes = Configure::read('textAttributes');
-				foreach ($attributes as $attribute) :
-				    $tmpItemCode = $attribute['ItemCode'];
-				    $tmpItemName = $attribute['ItemName'];
-				    ?>
-	    			<tr>
-	    			    <td width="100"><?php echo $attribute['ItemName']; ?>:</td>
-					<?php if (in_array($tmpItemName, $timeAttributes)): ?>
-					    <td style="height:80px;">
-						<?php
-						$length = (int) $attribute['Value'];
-						echo $this->ViewOperation->formatTimeLength($length);
-						?>
-					    </td>
-					<?php elseif (in_array($tmpItemName, $textAttributes)): ?>
-					    <td style="height:80px;">
-						<div style="overflow-y:auto;word-break: break-all;height:80px;">
-						    <?php echo $attribute['Value']; ?>
-						</div>
-					    </td>
-					<?php elseif (in_array($tmpItemName, $editAttributes)): ?>
-					    <td style="height:80px;" class="nrms_cont" id="<?php echo $tmpItemCode; ?>">
-						<div><?php echo $attribute['Value']; ?></div>
-					    </td>
-					<?php else: ?>
-					    <td style="height:80px;"><?php echo $attribute['Value']; ?></td>
-					<?php endif; ?>	
-	    			</tr>
-				<?php endforeach; ?>	
+			    <table cellpadding="0" cellspacing="0" class="xiangxitable" >		
+                    <tr>
+                        <td>一级分类：</td>
+                        <td>
+                            <select id="MAMClass" style="width:200px;height:30px;">
+                                <option value='-1'>请选择</option>
+                                <?php foreach ($xml as $key => $val) { ?>
+                                    <option value=<?php echo $key ?> <?php echo $MAMClass == $val ? 'selected' : '' ?>><?php echo $val ?></option>
+                                <?php } ?>
+                            <select/>
+                        </td>
+                    </tr>
+                    <tr class="odd">
+                        <td>二级分类：</td>
+                        <td>
+                            <div>
+                                <div>
+                                    <input type="text" id="dataStr" value="<?php echo $dataStr; ?>" readOnly="true" style="width:300px;height:30px;"><select onclick="change(this);" style="height:30px;"></select>
+                                </div>
+                                <div id="MAMSecondClass">
+                                    <?php foreach ($sonXml as $val) { ?>
+                                        <diva class="liHideL"><input type="checkbox" onclick="checkStr();"  name="sendBox" value='<?php echo $val['name'] ?>' <?php echo in_array($val['name'], $MAMSecondClass) ? 'checked' : ''; ?>><?php echo $val['name'] ?></diva>
+                                    <?php } ?>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                   
+                    <tr class="odd">
+                        <td>内容概要：</td>
+                        <td style="height: 470px; padding:1px;">
+                            <textarea id="Summary" rows="30" cols="70" style="border-color:#FFFFFF;outline: none;"><?php echo $Summary; ?></textarea>
+                        </td>
+                    </tr>
+                    <tr class="odd">
+                        <td>关键词：</td>
+                        <td style="height: 130px; padding: 5px;margin-top:10px;">
+                            <textarea id="Keywords" rows="8" cols="70" style="outline: none;"><?php echo $Keywords; ?></textarea>
+                        </td>
+                    </tr>
+				
+                    
 			    </table>
+				<div class="shleftbottom" style="height: 30px; background:url('');margin:30px 0 10px 150px;">               
+					<div class=" bt">
+						<input id="tg_commit" type="submit" value="通过" onclick="commit(1,<?php echo $theTaskID; ?>)"/>
+						<input id="th_commit" type="submit" value="退回" onclick="commit(2,<?php echo $theTaskID; ?>)"/>
+						<input id="bc_commit" type="submit" value="保存" onclick="commit(4,<?php echo $theTaskID; ?>)"/>
+				        <input id="qx_commit" type="submit" value="取消" onclick="onUpdateState(1)"/>      
+					</div>
+				</div>
+				
 			    <div class="page">
 				<?php
 				$this->Paginator->options(array(
@@ -294,10 +366,10 @@ $theTaskID = (int) $taskInfo['taskid'];
 				    <span class="red"><?php echo $metaPageParams['options']['limit']; ?></span>
 				    条 页次:<span class="red">
 					<?php
-					echo $this->Paginator->counter(array(
-					    'model' => 'Content',
-					    'format' => '%page%/%pages%'
-					));
+						echo $this->Paginator->counter(array(
+							'model' => 'Content',
+							'format' => '%page%/%pages%'
+						));
 					?>
 				    </span>
 				    页
@@ -347,7 +419,7 @@ function zhuangyi(val) {
     val = val.replace(/\'/g, "&#39;");
     return val;
 }
-    function nrms_edit() {
+    function nrms_edit() {	
 	$(".nrms_cont").each(function() {
 	    var _this = $(this);
 	    var o_nrms_cont = _this.text();
@@ -357,10 +429,10 @@ function zhuangyi(val) {
 	    /*判断输入是否合法*/
 	    function iptOper() {
 		_this.children("input").focus().blur(function() {
-		    var nrmsCont = $(this).val();
+		    var nrmsCont = $(this).val();			
 		    nrmsCont = zhuangyi(nrmsCont);
 		    if (nrmsCont == "") {
-			$(this).val("不能为空！").addClass("error_inpt");
+				$(this).val("不能为空！").addClass("error_inpt");
 		    } else {
 			if (nrmsCont != "不能为空！") {
 			    $(this).before('<div>' + nrmsCont + '</div>').remove();
@@ -369,18 +441,19 @@ function zhuangyi(val) {
 				var val_submit = $(this).val();
 				updataData(thecode, val_submit.replace(/&/g, ""));
 			    }
-			} else {
+			} else {			
 			    return;
 			}
 		    }
 		})
 	    }
 	    iptOper();
+		
 	    /*修改输入*/
 	    _this.delegate("div", "dblclick", function() {
-		var oval = $(this).text();
-		$(this).after('<input type="text" value="' + zhuangyi(oval) + '">').remove();
-		iptOper();
+			var oval = $(this).text();
+			$(this).after('<input type="text" value="' + zhuangyi(oval) + '">').remove();
+			iptOper();
 	    })
 	})
     }
@@ -399,7 +472,7 @@ function zhuangyi(val) {
     $(document).ready(function() {
 	$(".wdsh").addClass("on");
 
-<?php if (!TASK_AUDIT_TYPE): ?>
+	<?php if (!TASK_AUDIT_TYPE): ?>
     	$("#ysj_jm").show();
     	$("#js_jm").show();
 
@@ -407,7 +480,7 @@ function zhuangyi(val) {
     	$("#js_jm").removeClass("on");
     	$("#ysj_jmn").show();
     	$("#js_jmn").hide();
-<?php else : ?>
+	<?php else : ?>
     <?php
     if ($layoutParams['userType'] == CONTENT_TASK_TYPE):
 	?>
@@ -432,15 +505,11 @@ function zhuangyi(val) {
     endif;
     ?>
 <?php endif; ?>
-
-
 	var filedata = '<?php echo $taskFile; ?>';
 	filedata = filedata.replace(/\\/g, "\\\\");
 	var jsonObj = JSON.parse(filedata);
 	setFileInfo(jsonObj);
     });
-
-
     function setFileInfo(data) {
 	var len = data.length;
 	for (i = 0; i < len; i++) {
@@ -481,7 +550,7 @@ function zhuangyi(val) {
 	}
 	return 1;
     }
-//播放器系列操作
+	//播放器系列操作
     function onSetVideoFile(strVideo) { //此函数在加载播放器后就立即调用。功能：设置选择的视频文件
 	var player = document.getElementById('EncoderPlayer');
 	player.AddVideo(strVideo);
@@ -507,16 +576,16 @@ function zhuangyi(val) {
 	    url: "<?php echo AJAX_DOMAIN; ?>" + "/batch_audit_tasks/getFileInfo",
 	    data: datas,
 	    success: function(msg) {
-//重新加载播放器
+		//重新加载播放器
 		var playerDiv = document.getElementById("play_div");
 		playerDiv.innerHTML = "<object classid=\"clsid:F7944BBA-9B19-44EF-B428-17D527982A2D\" type=\"application/x-itst-activex\" style=\"border:0px;width:590px;height:465px;\" id=\"EncoderPlayer\">" +
 			"</object>";
-//设置文件
+		//设置文件
 		var filedata = msg;//msg.replace(/\\/g,"\\\\");
 		var jsonObj = JSON.parse(filedata);
 		setFileInfo(jsonObj);
 
-//更新技审
+		//更新技审
 		var frame = document.getElementById("myiframe");
 		var url = "<?php echo $this->Html->url(array('controller' => 'app_audits', 'action' => 'techData')); ?>" + "/" + taskid + "/" + value;
 		frame.src = url;
@@ -524,38 +593,38 @@ function zhuangyi(val) {
 	});
     }
     function getTrimInOutLoaded(lTrimIn, lTrimOut) {
-	var inValue = lTrimIn << 0;
-	var outValue = lTrimOut << 0;
-	var data = "";
-	if (inValue != -1 && outValue != -1) {
-	    data = formatDate(lTrimIn) + "---" + formatDate(lTrimOut) + " :";
-	}
-	else if (inValue == -1 && outValue != -1) {
-	    message = '播放器未设置入点';
-	    setArtDialog(message);
+		var inValue = lTrimIn << 0;
+		var outValue = lTrimOut << 0;
+		var data = "";
+		if (inValue != -1 && outValue != -1) {
+			data = formatDate(lTrimIn) + "---" + formatDate(lTrimOut) + " :";
+		}
+		else if (inValue == -1 && outValue != -1) {
+			message = '播放器未设置入点';
+			setArtDialog(message);
 
-	    data = "---" + formatDate(lTrimOut) + " :";
-	}
-	else if (inValue != -1 && outValue == -1) {
-	    message = '播放器未设置出点';
-	    setArtDialog(message);
-	    data = formatDate(lTrimIn) + "---" + " :";
-	}
-	else {
-	    message = '播放器未设置出入点';
-	    setArtDialog(message);
-	}
-	if (data) {
-	    var allData = "";
-	    var preData = $("#ContentAuditNote").val();
-	    if (preData) {
-		allData = preData + "\n" + data;
-	    }
-	    else {
-		allData = data;
-	    }
-	    $("#ContentAuditNote").val(allData);
-	}
+			data = "---" + formatDate(lTrimOut) + " :";
+		}
+		else if (inValue != -1 && outValue == -1) {
+			message = '播放器未设置出点';
+			setArtDialog(message);
+			data = formatDate(lTrimIn) + "---" + " :";
+		}
+		else {
+			message = '播放器未设置出入点';
+			setArtDialog(message);
+		}
+		if (data) {
+			var allData = "";
+			var preData = $("#ContentAuditNote").val();
+			if (preData) {
+				allData = preData + "\n" + data;
+			}
+			else {
+				allData = data;
+			}
+			$("#ContentAuditNote").val(allData);
+		}
     }
     function formatDate(time) {
 	var frameNum = <?php echo TASK_FRAME_NUM; ?>;
@@ -576,8 +645,7 @@ function zhuangyi(val) {
 		((frame < 10) ? "0" + frame : frame);
     }
 
-
-//整个任务提交
+	//整个任务提交
     function commit(state, taskid) {
 	var inputs = document.getElementsByTagName("input");
 	var platNum = 0;
@@ -587,16 +655,16 @@ function zhuangyi(val) {
 		var temp = document.getElementById(inputs[i].id).checked;
 		if (temp) {
 		    if (platNum == 0) {
-			platData += inputs[i].id;
+				platData += inputs[i].id;
 		    }
 		    else {
-			platData += "," + inputs[i].id;
+				platData += "," + inputs[i].id;
 		    }
 		    platNum++;
 		}
 	    }
 	}
-<?php if ($layoutParams['userType'] != TECH_TASK_TYPE): ?>
+	<?php if ($layoutParams['userType'] != TECH_TASK_TYPE): ?>
     	if (platNum == 0) {
     	    art.dialog({
     		title: '提示',
@@ -609,10 +677,9 @@ function zhuangyi(val) {
     	    });
     	    return;
     	}
-<?php endif; ?>
+	<?php endif; ?>
 
-
-//锁定对应按钮
+	//锁定对应按钮
 	if (state != 4) {
 	    document.getElementById('tg_commit').disabled = true;
 	    document.getElementById('th_commit').disabled = true;
@@ -620,11 +687,38 @@ function zhuangyi(val) {
 	    document.getElementById('qx_commit').disabled = true;
 	}
 
-//通过或退回只能提交一次
+	//通过或退回只能提交一次
 	var note = $("#ContentAuditNote").val();
 	var datas = "ContentAuditNote=" + note + "&TaskID=" + taskid + "&State=" + state;
 	datas = datas + "&SelectPlatID=" + platData;
 	datas = datas + "&UpdateMetaData=" + revisedMetaData.replace(/\+/g, '%2B');
+	var MAMClass = $("#MAMClass option:selected").text();    
+    var Keywords = $("#Keywords").val();
+	var Summary = $("#Summary").val();
+	var MAMVal = $("#MAMClass option:selected").val();
+    var SecondVal = $("#dataStr").val();
+    if (!MAMClass || MAMVal==-1 ) {
+        alert("请选择一级分类");
+        document.getElementById('tg_commit').disabled = false;
+        return false;
+    }
+    //if (!SecondVal) {
+    //    alert("请选择二级分类");
+    //   document.getElementById('tg_commit').disabled = false;
+    //    return false;
+    //}
+    //if (!Keywords) {
+    //    alert("请输入关键词");
+    //   document.getElementById('tg_commit').disabled = false;
+    //    return false;
+    //}
+    //if (!Summary) {
+    //   alert("请输入内容概要");
+    //  document.getElementById('tg_commit').disabled = false;
+    // return false;
+    //}
+ 
+    datas = datas + "&Keywords="+Keywords+"&Summary="+Summary+"&MAMClass="+MAMClass+"&MAMSecondClass="+SecondVal;  
 	$.ajax({
 	    type: "POST",
 	    url: "<?php echo AJAX_DOMAIN; ?>" + "/audit_handles/commitTask",
@@ -646,7 +740,7 @@ function zhuangyi(val) {
 	    }
 	});
     }
-//进行任务状态更新，value：1->取消;3->统计;4->查询;5->节目列表
+	//进行任务状态更新，value：1->取消;3->统计;4->查询;5->节目列表
     function onUpdateState(value, tag) {
 	if (value == 1) {
 	    art.dialog({
@@ -655,14 +749,14 @@ function zhuangyi(val) {
 		lock: true,
 		button: [
 		    {
-			value: '是',
-			callback: function() {
-			    tmpUpdateState(value);
-			},
-			focus: true
+				value: '是',
+				callback: function() {
+					tmpUpdateState(value);
+				},
+				focus: true
 		    },
 		    {
-			value: '否'
+				value: '否'
 		    }
 		]
 	    });
@@ -709,3 +803,99 @@ function zhuangyi(val) {
 	return <?php echo $theTaskID; ?>;
     }
 </script>
+<script>
+    $("#MAMClass").change(function () {
+        var demoid = $(this).val();
+        if (demoid != "-1") {
+            var requestUrl = "<?php echo $this->Html->url(array('controller'=>'BatchAuditTasks','action'=>'ajaxxml'));?>";
+            $.ajax({
+                dataType: "json",
+                url: requestUrl,
+                //传入的参数
+                data: "demoid=" + demoid,
+                success: function (json) {
+					$("#dataStr").val('');
+                    $("#MAMSecondClass").empty();
+                    $(json).each(function () {
+						var opt = "<diva class='liHideL'><input type='checkbox' onclick='checkStr();' name='sendBox' value='"+this.name+"'>"+this.name+" </diva>";
+                        
+                        $("#MAMSecondClass").append(opt);
+                    });
+                }
+            });
+        } else {
+			$("#dataStr").val('');
+            $("#MAMSecondClass").empty();
+        }
+    });
+
+	var bodystate = 1;
+	var nextState=1;
+	var BoxDataStr = '';                       
+	function change(obj)
+	{
+		var liArray=document.getElementsByTagName("diva");
+		var i=0;
+		var length=liArray.length;
+		switch(nextState){
+		case 1:
+			obj.innerHTML="<input type='text' value='"+BoxDataStr+"'>";
+			for(;i<length;i++){
+				liArray[i].className="liShowL";
+			}
+			nextState=0;
+			bodystate=2;
+			break;
+		case 0:
+			obj.innerHTML="<input type='text' value='"+BoxDataStr+"'>";
+			for(;i<length;i++){
+				liArray[i].className="liHideL";
+			}
+			nextState=1;
+		}
+	}
+	
+	function checkStr()
+	{	
+		bodystate=2;
+		var str=document.getElementsByName("sendBox");
+		var objarray=str.length;
+		BoxDataStr="";
+		for (i=0;i<objarray;i++)
+		{
+		  if(str[i].checked == true)
+		  {
+			  if(!BoxDataStr){
+				BoxDataStr+=str[i].value;
+			  }else{
+				BoxDataStr+=","+str[i].value;
+			  }	   
+		  }
+		}
+		document.getElementById("dataStr").value = BoxDataStr;
+	}
+
+	document.body.onclick = function(){
+		clickDel(bodystate);
+	}
+	
+	function clickDel(ints){
+		var stat = ints;		
+		if(stat==0){
+			var liArray=document.getElementsByTagName("diva");
+			var length=liArray.length;				
+			for(var i=0;i<length;i++){
+				liArray[i].className="liHideL";
+			}
+			nextState=1;
+			bodystate=1;
+		}
+		if(stat!=0 && stat==2){
+			bodystate = 0;
+		}			
+	}
+</script>
+
+
+
+

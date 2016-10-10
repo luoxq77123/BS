@@ -3,7 +3,7 @@ APP::import('Controller','AppAudits');
 App::import('Vendor', 'Audit', array('file' => 'webservices' . DS . 'audit.php'));
 class BatchAuditTasksController extends AppAuditsController{
 	public $name = 'BatchAuditTasks';
-	public $uses = array('Content');
+	public $uses = array();
 	public function beforeFilter(){
 		parent::beforeFilter();
 		//soap客户端对象
@@ -17,7 +17,6 @@ class BatchAuditTasksController extends AppAuditsController{
 		$options = array_merge($this->params, $this->params['url'], $this->passedArgs);
 		$model = (int)$options['cmode'];
 		$page = (int)$options['cpage'];
-	
 		//进行级别判断（只查看任务）
 		$this->_isAllowAudit($this->userOverLevel, $model,$page);
 
@@ -48,63 +47,7 @@ class BatchAuditTasksController extends AppAuditsController{
 				$taskID = (int)$taskIDList[0];
 			}
 		}
-		//获取当前任务信息
-        $fields = array('auditlevel', 'pgmguid');
-		$taskInfop = $this->_getCurTaskInfo($taskID, $fields);
-        $guid = isset($taskInfop['pgmguid'])?$taskInfop['pgmguid']:'';
-        $relUpdateSql = '';
-        if ($guid) {
-            $sql = "select MPCXML from  ET_NM_CNTVPGMREL where PGMGUID = '" . $guid . "' ";
-            $relUpdateSql = $this->Content->query($sql);
-        }
-		$con = isset($relUpdateSql[0][0])?current($relUpdateSql[0][0]):'';
-		$conn = $this->_toArray($con);
-		$mpcxmlarr = array();
-		$mpcArr = isset($conn['MPC']['Content']['AddTask']['TaskInfo'])?$conn['MPC']['Content']['AddTask']['TaskInfo']:array();
-        if ($mpcArr) {
-            foreach ($mpcArr as $k => $v) {
-                if ($v['Scope'] === 'tv_SobeyExchangeProtocal') {
-                    $mpcxmlarr = $mpcArr[$k]['Data']['UnifiedContentDefine']['ContentInfo']['ContentData']['EntityData']['AttributeItem'];
-                    break;
-                }
-            }
-        }
-        $MAMClass = '';
-        $MAMSecondClass = '';
-        $Keywords = '';
-        $Summary = '';
-		$dataStr = '';
-		if($mpcxmlarr){
-            foreach ($mpcxmlarr as $val) {
-                        if ($val['ItemCode'] == 'MAMClass') {
-                            $MAMClass = $val['Value'];
-                        }
-                        elseif ($val['ItemCode'] == 'MAMSecondClass') {
-                            $MAMSecondClass = $val['Value'];
-							$dataStr = $val['Value'];
-                        }
-                        elseif ($val['ItemCode'] == 'Keywords') {
-                            $Keywords = $val['Value'];
-                        }
-                        elseif ($val['ItemCode'] == 'Summary') {
-                            $Summary = $val['Value'];
-                        }
-                    }
-        }
-		
-		$MAMSecondClass = $MAMSecondClass?explode(',',$MAMSecondClass):'';
-		$this->set(compact('MAMClass','MAMSecondClass','Keywords','Summary','dataStr'));
-		
-		$xml = $this->getXmlVal();
-        $this->set(compact('xml'));
-        
-		$sonXml = array();
-		
-		 if($MAMClass){        
-			$sonXml = $this->getPgmSndClass($MAMClass);            
-        }
-		
-		$this->set(compact('sonXml'));
+
 		if ($taskID){
 			$taskIndex = array_search($taskID, $taskIDList);
 			$this->set(compact('taskIndex'));
@@ -225,7 +168,6 @@ class BatchAuditTasksController extends AppAuditsController{
 		}
 
 		$selectFileAlias = '';
-		
 		if ($fileAlias){
 			$selectFileAlias = $fileAlias[0];
 			$defaultFileAlias= Configure::read('DEFAULT_FILE_ALIAS');
@@ -238,13 +180,13 @@ class BatchAuditTasksController extends AppAuditsController{
 
 		//获取文件信息
 		$taskFile = $this->getFileList($taskID,$selectFileAlias);
-
+		// var_dump($taskFile);
+		//
 		$this->set(compact('taskInfo'));
 		$this->set(compact('selectFileAlias','fileAlias','taskFile'));
 
 		//元数据的获取
 		$metaData = $this->getmetaData($taskID);
-		//var_dump($metaData);exit;
 		extract($metaData);
 
 		$this->set(compact('platFormInfos','attributes'));
@@ -363,67 +305,4 @@ class BatchAuditTasksController extends AppAuditsController{
 		$allCount = $this->_getNotAuditListCount();
 		return array('layoutMode'=>LAYOUT_MODE_NOT_CTD,'allCount'=>$allCount,'model'=>$model,'page'=>$page,'userType'=>$this->userType);
 	}
-	
-	public function getXmlVal($level=1)
-    {
-        $file = WWW_ROOT . 'CNTVCatalogExt.xml';
-        $xml = new DOMDocument();
-        	$xml->load($file);
-        	$Catalog = $xml->getElementsByTagName('Catalog');
-        $retArr =array();
-        if($level==1){
-            foreach($Catalog as $key=>$val){
-                $retArr[] =  $val->getAttribute( "Value");
-            }
-        }else{
-            foreach ($Catalog as $key => $val) {
-                $retArr[] = $val->getElementsByTagName('Value')->item(0)->nodeValue;
-            }
-        }
-        return $retArr;
-    }
-
-    public function ajaxxml(){
-        $this->autoRender = false;
-        $demoid = $_GET['demoid'];
-        $brr = $this->getXmlVal(2);
-        $arr = array();
-        foreach ($brr as $key => $val) {
-            if($demoid == $key){
-                $arr = explode(',',$val);
-            }
-        }
-        $retArr = array();
-        foreach($arr as $key=>$val){
-            $crr['id'] = $key;
-            $crr['name'] = $val;
-            $retArr[] = $crr;
-        }//var_dump($demoid);exit;
-        echo json_encode($retArr);
-    } 
-	public function getPgmSndClass($name)
-    {
-        $file = WWW_ROOT . 'CNTVCatalogExt.xml';
-        $xml = new DOMDocument();
-        $xml->load($file);
-        $Catalog = $xml->getElementsByTagName('Catalog');
-        $dataArr = array();
-        foreach ($Catalog as $key => $val) {
-            if($name == $val->getAttribute('Value')){
-                $dataArr = $val->getElementsByTagName('Value')->item(0)->nodeValue;
-            }
-
-        }
-        $arr = explode(',', $dataArr);
-        $retArr = array();
-        foreach ($arr as $key => $val) {
-            $crr['id'] = $key;
-            $crr['name'] = $val;
-            $retArr[] = $crr;
-        }
-        return $retArr;
-    }
-	
-	
-	
 }
